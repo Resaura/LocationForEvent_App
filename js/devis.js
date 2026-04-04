@@ -28,6 +28,24 @@ function needsRelance(d) {
 }
 
 
+// ─── CALCUL TVA VENTILÉE PAR TAUX ────────────────────────────
+// Utilisé par Devis (updateTotals) et Historique (_detailHtml) et Print
+function calcTvaMap(lines, totalRemises, sousTotal) {
+  const map = {}; // { taux: { baseHT, montantTva } }
+  (lines || []).forEach(l => {
+    const t = l.tva || 0;
+    if (!map[t]) map[t] = { baseHT: 0, montantTva: 0 };
+    map[t].baseHT += l.prix;
+  });
+  Object.keys(map).forEach(t => {
+    const ratio = sousTotal > 0 ? map[t].baseHT / sousTotal : 0;
+    const remise = totalRemises * ratio;
+    map[t].baseHT = Math.max(0, map[t].baseHT - remise);
+    map[t].montantTva = map[t].baseHT * parseFloat(t);
+  });
+  return map;
+}
+
 // ─── MODULE DEVIS (formulaire) ────────────────────────────────
 const Devis = (() => {
   let _lines    = [];       // lignes du devis en cours
@@ -161,7 +179,7 @@ const Devis = (() => {
       return;
     }
 
-    _lines.push({ id: Date.now(), name, dur, qty, pu: prix / qty, prix, caut });
+    _lines.push({ id: Date.now(), name, dur, qty, pu: prix / qty, prix, caut, tva: _selItem?.tva || 0 });
 
     // Reset champs ligne
     _setVal('nd-mat-q', '');
@@ -302,14 +320,18 @@ const Devis = (() => {
       }
     }
 
-    // TVA détail sous le total
+    // TVA détail par taux sous le total
     const tvaEl = document.getElementById('nd-tva-detail');
-    const tva = db.params.tva || 0;
     if (tvaEl) {
-      if (tva > 0) {
-        const montantTVA = totHT * tva;
+      const tvaMap = calcTvaMap(_lines, totalRemises, sousTotal);
+      const totalTVA = Object.values(tvaMap).reduce((s, v) => s + v.montantTva, 0);
+      if (totalTVA > 0) {
         tvaEl.style.display = 'block';
-        tvaEl.innerHTML = `TVA (${tvaLabel()}) : ${montantTVA.toFixed(2)} € · TTC : ${(totHT + montantTVA).toFixed(2)} €`;
+        const rows = Object.entries(tvaMap)
+          .filter(([, v]) => v.montantTva > 0)
+          .map(([taux, v]) => `TVA ${(taux * 100).toFixed(1).replace('.0', '')}% : ${v.montantTva.toFixed(2)} €`)
+          .join(' · ');
+        tvaEl.innerHTML = `${rows} · <strong>TTC : ${(totHT + totalTVA).toFixed(2)} €</strong>`;
       } else {
         tvaEl.style.display = 'none';
       }
@@ -488,6 +510,7 @@ const Devis = (() => {
       pu:   totalPrix,
       prix: totalPrix,
       caut: 0,
+      tva:  svc.tva || 0,
     });
 
     // Reset le picker
@@ -607,6 +630,7 @@ const Devis = (() => {
       pu:   _selEpi.prix,
       prix,
       caut: 0,
+      tva:  _selEpi.tva || 0,
     });
 
     // Reset picker
@@ -1138,13 +1162,20 @@ const Historique = (() => {
             return `<div style="color:var(--red)"><i data-lucide="tag"></i> ${r.nom} ${label} : - ${(r.montant_deduit || 0).toFixed(2)} €</div>`;
           }).join('')}
         ` : ''}
-        ${(db.params.tva || 0) > 0 ? `
-          <div style="margin-top:5px;color:var(--grey)">Total HT : ${tot.toFixed(2)} €</div>
-          <div style="color:var(--grey)">TVA (${tvaLabel()}) : ${(tot * db.params.tva).toFixed(2)} €</div>
-          <div style="font-weight:700;color:var(--navy);font-size:.95rem">Total TTC : ${(tot * (1 + db.params.tva)).toFixed(2)} €</div>
-        ` : `
-          <div style="font-weight:700;color:var(--navy);font-size:.95rem;margin-top:5px">Total : ${tot.toFixed(2)} €</div>
-        `}
+        ${(() => {
+          const tvaMap = calcTvaMap(dv.lines || [], totalRemises, sousTotal);
+          const totalTVA = Object.values(tvaMap).reduce((s, v) => s + v.montantTva, 0);
+          if (totalTVA > 0) {
+            const rows = Object.entries(tvaMap)
+              .filter(([, v]) => v.montantTva > 0)
+              .map(([taux, v]) => `<div style="color:var(--grey)">TVA ${(taux * 100).toFixed(1).replace('.0', '')}% (base ${v.baseHT.toFixed(2)} €) : ${v.montantTva.toFixed(2)} €</div>`)
+              .join('');
+            return `<div style="margin-top:5px;color:var(--grey)">Total HT : ${tot.toFixed(2)} €</div>
+              ${rows}
+              <div style="font-weight:700;color:var(--navy);font-size:.95rem">Total TTC : ${(tot + totalTVA).toFixed(2)} €</div>`;
+          }
+          return `<div style="font-weight:700;color:var(--navy);font-size:.95rem;margin-top:5px">Total : ${tot.toFixed(2)} €</div>`;
+        })()}
         <div style="color:var(--grey)">Caution : ${caut} €</div>
       </div>
       ${dv.notes ? `<div style="margin-top:10px;background:#F9FAFB;padding:10px;border-radius:8px;font-size:.78rem"><strong>Notes :</strong> ${dv.notes}</div>` : ''}

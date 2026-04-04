@@ -600,10 +600,8 @@ const Params = {
     set('p-km',       p.km ?? 1.5);
     set('p-valid',    p.valid ?? 30);
     set('p-mentions', p.mentions);
-    // TVA
-    set('p-tva', p.tva ?? 0);
-    const ttcEl = document.getElementById('p-ttc');
-    if (ttcEl) ttcEl.checked = !!p.affichage_ttc;
+    // TVA par article
+    set('p-saisie-prix', p.saisie_prix || 'HT');
     Params._updateTvaBadge();
     Params.renderTypes();
     if (typeof Remises !== 'undefined') Remises.renderList();
@@ -623,8 +621,7 @@ const Params = {
       km:       parseFloat(get('p-km'))   || 1.5,
       valid:    parseInt(get('p-valid'))  || 30,
       mentions: get('p-mentions'),
-      tva:          parseFloat(get('p-tva')) || 0,
-      affichage_ttc: document.getElementById('p-ttc')?.checked || false,
+      saisie_prix:  get('p-saisie-prix') || 'HT',
       design:       prevDesign,
     };
     try {
@@ -640,16 +637,10 @@ const Params = {
   _updateTvaBadge() {
     const el = document.getElementById('tva-badge');
     if (!el) return;
-    const tva = db.params.tva || 0;
-    if (!tva) { el.style.display = 'none'; return; }
+    // TVA par article — les montants affichés sont toujours HT
     el.style.display = 'inline-block';
-    if (db.params.affichage_ttc) {
-      el.textContent = 'TTC';
-      el.style.background = '#D1FAE5'; el.style.color = '#059669';
-    } else {
-      el.textContent = 'HT';
-      el.style.background = '#F3F4F6'; el.style.color = '#6B7280';
-    }
+    el.textContent = 'HT';
+    el.style.background = '#F3F4F6'; el.style.color = '#6B7280';
   },
 
   // ── Types d'événements ────────────────────────────────────
@@ -963,10 +954,10 @@ function fillTypeSelect(id, selected) {
 }
 
 // ─── TVA — Fonctions utilitaires globales ───────────────────
+// Depuis la refonte TVA par article, les montants sont toujours HT.
+// prixAffiche retourne simplement le montant (protection NaN).
 function prixAffiche(montantHT) {
-  const tva = db.params.tva || 0;
-  const v = !tva ? montantHT : (db.params.affichage_ttc ? montantHT * (1 + tva) : montantHT);
-  return isNaN(v) ? 0 : v;
+  return isNaN(montantHT) ? 0 : montantHT;
 }
 
 // Helper dashboard : formatte un montant pour KPI (protection NaN)
@@ -976,20 +967,11 @@ function _fmtKpi(montant) {
 }
 
 function labelPrix() {
-  const tva = db.params.tva || 0;
-  if (!tva) return '';
-  return db.params.affichage_ttc ? 'TTC' : 'HT';
-}
-
-function tvaLabel() {
-  const tva = db.params.tva || 0;
-  if (!tva) return '';
-  return (tva * 100).toFixed(1).replace('.0', '') + '%';
+  return 'HT';
 }
 
 window.prixAffiche = prixAffiche;
 window.labelPrix   = labelPrix;
-window.tvaLabel    = tvaLabel;
 window.arrondi     = arrondi;
 
 // ─── EXPOSITION GLOBALE ─────────────────────────────────────

@@ -51,10 +51,13 @@ const Catalogue = (() => {
            ${prix ? `<br><span class="text-sm">Jour : ${prix.unit.toFixed(2)} €</span>` : ''}`
         : '<span class="text-sm">—</span>';
 
+      const tvaLabel = i.tva ? `${(i.tva * 100).toFixed(1).replace('.0', '')} %` : '—';
+
       return `<tr>
         <td style="font-weight:500;max-width:200px" class="truncate">${i.name}</td>
         <td><span class="badge bg-grey">${i.cat || 'Autre'}</span></td>
         <td>${prixDisp}</td>
+        <td class="text-sm">${tvaLabel}</td>
         <td>${i.owned
           ? '<span class="badge bg-green"><i data-lucide="check-circle"></i> Possédé</span>'
           : '<span class="badge bg-gold"><i data-lucide="refresh-cw"></i> À acquérir</span>'}</td>
@@ -101,11 +104,13 @@ const Catalogue = (() => {
       _setVal('m-mat-pa',     item.pa || '');
       _setVal('m-mat-cat',    item.cat);
       _setVal('m-mat-statut', item.owned ? 'owned' : 'future');
+      _setVal('m-mat-tva',    item.tva != null ? String(item.tva) : '0');
       _setVal('m-mat-notes',  item.notes || '');
       previewPrix();
     } else {
       ['m-mat-nom', 'm-mat-pa', 'm-mat-notes'].forEach(x => _setVal(x, ''));
       _setVal('m-mat-statut', 'owned');
+      _setVal('m-mat-tva', '0');
     }
 
     App.openModal('m-mat');
@@ -139,6 +144,7 @@ const Catalogue = (() => {
       pa:    parseFloat(_getVal('m-mat-pa'))     || null,
       cat:   _getVal('m-mat-cat')                || 'Autre',
       owned: _getVal('m-mat-statut') === 'owned',
+      tva:   parseFloat(_getVal('m-mat-tva'))    || 0,
       notes: _getVal('m-mat-notes').trim()
     };
 
@@ -186,13 +192,14 @@ const Catalogue = (() => {
 
   // ── Export CSV ────────────────────────────────────────────
   function exportCsv() {
-    const headers = ['Nom', 'Catégorie', 'Prix achat (€)', 'Statut', 'Prix jour (€)', 'Notes'];
+    const headers = ['Nom', 'Catégorie', 'Prix achat (€)', 'TVA (%)', 'Statut', 'Prix jour (€)', 'Notes'];
     const rows = db.cat.map(i => {
       const pj = i.pa ? calc(i.pa, 'jour') : null;
       return [
         `"${i.name}"`,
         `"${i.cat || ''}"`,
         i.pa || '',
+        i.tva ? (i.tva * 100) : 0,
         i.owned ? 'Possédé' : 'À acquérir',
         pj ? pj.unit.toFixed(2) : '',
         `"${(i.notes || '').replace(/"/g, '""')}"`

@@ -244,6 +244,7 @@
                     <th>Nom</th>
                     <th>Catégorie</th>
                     <th>Prix achat</th>
+                    <th>TVA</th>
                     <th>Statut</th>
                     <th>Notes</th>
                     <th></th>
@@ -686,22 +687,15 @@
               <div class="card-hd"><div class="card-title"><i data-lucide="receipt"></i> TVA</div></div>
               <div class="card-bd">
                 <div class="fg">
-                  <label class="fl">Taux de TVA</label>
-                  <select id="p-tva">
-                    <option value="0">Sans TVA</option>
-                    <option value="0.055">5,5 %</option>
-                    <option value="0.10">10 %</option>
-                    <option value="0.20">20 %</option>
+                  <label class="fl">Mode de saisie des prix</label>
+                  <select id="p-saisie-prix">
+                    <option value="HT">Prix saisis en HT</option>
+                    <option value="TTC">Prix saisis en TTC</option>
                   </select>
                 </div>
-                <div class="fg" style="margin-top:8px">
-                  <label style="display:flex;align-items:center;gap:8px;font-size:.84rem;cursor:pointer">
-                    <input type="checkbox" id="p-ttc" style="width:16px;height:16px">
-                    Affichage TTC (sinon HT)
-                  </label>
-                </div>
                 <div style="font-size:.72rem;color:var(--grey);margin-top:6px">
-                  Ce paramètre change l'affichage de tous les montants dans l'app. Les prix de base restent en HT.
+                  La TVA est gérée par article (matériel, service, épicerie). Chaque article a son propre taux de TVA.
+                  Les montants dans l'app sont affichés en HT. La TVA est détaillée par taux sur les devis et factures.
                 </div>
                 <button class="btn btn-primary fw mt-2" onclick="Params.save()"><i data-lucide="save"></i> Sauvegarder</button>
               </div>
@@ -858,9 +852,20 @@
           </select>
         </div>
       </div>
-      <div class="fg">
-        <label class="fl">Prix d'achat (€)</label>
-        <input type="number" id="m-mat-pa" placeholder="Ex: 350" oninput="Catalogue.previewPrix()">
+      <div class="r2">
+        <div class="fg">
+          <label class="fl">Prix d'achat (€)</label>
+          <input type="number" id="m-mat-pa" placeholder="Ex: 350" oninput="Catalogue.previewPrix()">
+        </div>
+        <div class="fg">
+          <label class="fl">TVA applicable</label>
+          <select id="m-mat-tva">
+            <option value="0">Aucune (0%)</option>
+            <option value="0.055">5,5%</option>
+            <option value="0.10">10%</option>
+            <option value="0.20">20%</option>
+          </select>
+        </div>
       </div>
       <div class="info" id="m-mat-prev" style="display:none"></div>
       <div class="fg"><label class="fl">Notes</label><input type="text" id="m-mat-notes" placeholder="Capacité, marque…"></div>
@@ -983,6 +988,15 @@
           <input type="text" id="m-svc-desc" placeholder="Optionnel">
         </div>
       </div>
+      <div class="fg">
+        <label class="fl">TVA applicable</label>
+        <select id="m-svc-tva">
+          <option value="0">Aucune (0%)</option>
+          <option value="0.055">5,5%</option>
+          <option value="0.10">10%</option>
+          <option value="0.20" selected>20%</option>
+        </select>
+      </div>
       <div class="sep"></div>
       <div class="flex jb items-c mb-3">
         <strong style="font-size:.85rem;color:var(--navy)">Options</strong>
@@ -1096,6 +1110,15 @@
             <option value="Ambiant">Ambiant</option>
           </select>
         </div>
+      </div>
+      <div class="fg">
+        <label class="fl">TVA applicable</label>
+        <select id="m-epi-tva">
+          <option value="0">Aucune (0%)</option>
+          <option value="0.055" selected>5,5%</option>
+          <option value="0.10">10%</option>
+          <option value="0.20">20%</option>
+        </select>
       </div>
       <div class="fg">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.84rem">

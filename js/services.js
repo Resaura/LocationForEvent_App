@@ -113,7 +113,7 @@ const Services = (() => {
       return `<div class="card mb-3">
         <div class="card-hd">
           <div>
-            <div class="card-title" style="font-size:.88rem"><i data-lucide="wrench"></i> ${s.nom}</div>
+            <div class="card-title" style="font-size:.88rem"><i data-lucide="wrench"></i> ${s.nom}${s.tva ? ` <span style="font-size:.68rem;color:var(--blue);font-weight:400">(TVA ${(s.tva*100).toFixed(1).replace('.0','')}%)</span>` : ''}</div>
             ${s.description ? `<div style="font-size:.75rem;color:var(--grey);margin-top:2px">${s.description}</div>` : ''}
           </div>
           <div class="btn-row">
@@ -148,12 +148,16 @@ const Services = (() => {
       if (idEl)   idEl.value  = id;
       if (nomEl)  nomEl.value = svc.nom || '';
       if (descEl) descEl.value = svc.description || '';
+      const tvaEl = document.getElementById('m-svc-tva');
+      if (tvaEl) tvaEl.value = svc.tva != null ? String(svc.tva) : '0.20';
       (svc.options || []).forEach(opt => addOption(opt));
     } else {
       if (titleEl) titleEl.textContent = 'Nouveau service';
       if (idEl)   idEl.value  = '';
       if (nomEl)  nomEl.value = '';
       if (descEl) descEl.value = '';
+      const tvaEl = document.getElementById('m-svc-tva');
+      if (tvaEl) tvaEl.value = '0.20';
     }
 
     App.openModal('m-svc');
@@ -228,6 +232,7 @@ const Services = (() => {
     const svc = {
       nom,
       description: document.getElementById('m-svc-desc')?.value?.trim() || '',
+      tva:         parseFloat(document.getElementById('m-svc-tva')?.value) || 0,
       options:     _readOpts(),
     };
 

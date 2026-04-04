@@ -126,7 +126,7 @@ const Epicerie = (() => {
               <span class="badge bg-grey" style="font-size:.66rem">${p.categorie || '—'}</span>
             </div>
             <div style="font-size:.78rem;color:var(--grey);margin-top:2px">
-              ${p.prix.toFixed(2)} € / ${p.unite || 'unité'}
+              ${p.prix.toFixed(2)} € / ${p.unite || 'unité'}${p.tva ? ` <span style="font-size:.68rem;color:var(--blue)">(TVA ${(p.tva*100).toFixed(1).replace('.0','')}%)</span>` : ''}
             </div>
           </div>
           <div class="btn-row" style="flex-shrink:0">
@@ -162,6 +162,8 @@ const Epicerie = (() => {
       if (uniteEl) uniteEl.value = p.unite || 'unité';
       if (catEl)   catEl.value   = p.categorie || 'Consommables';
       if (consEl)  consEl.value  = p.conservation || 'Sec';
+      const tvaEl = document.getElementById('m-epi-tva');
+      if (tvaEl)   tvaEl.value  = p.tva != null ? String(p.tva) : '0.055';
       if (actifEl) actifEl.checked = p.actif !== false;
     } else {
       if (titleEl) titleEl.textContent = 'Nouveau produit';
@@ -171,6 +173,8 @@ const Epicerie = (() => {
       if (uniteEl) uniteEl.value = 'unité';
       if (catEl)   catEl.value   = 'Consommables';
       if (consEl)  consEl.value  = 'Sec';
+      const tvaEl = document.getElementById('m-epi-tva');
+      if (tvaEl)   tvaEl.value  = '0.055';
       if (actifEl) actifEl.checked = true;
     }
 
@@ -188,6 +192,7 @@ const Epicerie = (() => {
       unite:        document.getElementById('m-epi-unite')?.value?.trim() || 'unité',
       categorie:    document.getElementById('m-epi-cat')?.value || 'Consommables',
       conservation: document.getElementById('m-epi-conserv')?.value || 'Sec',
+      tva:          parseFloat(document.getElementById('m-epi-tva')?.value) || 0,
       actif:        document.getElementById('m-epi-actif')?.checked ?? true,
     };
 

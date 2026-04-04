@@ -148,13 +148,18 @@ ${(dv.client || dv.recup) ? `<div class="client-box">
       return '<div style="color:#DC2626">Remise ' + r.nom + ' ' + label + ' : - ' + (r.montant_deduit || 0).toFixed(2) + ' €</div>';
     }).join('')}
   ` : ''}
-  ${(db.params.tva || 0) > 0 ? `
-    <div style="margin-top:6px">Total HT : ${tot.toFixed(2)} €</div>
-    <div>TVA (${tvaLabel()}) : ${(tot * db.params.tva).toFixed(2)} €</div>
-    <div class="tot-main">Total TTC : ${(tot * (1 + db.params.tva)).toFixed(2)} €</div>
-  ` : `
-    <div style="margin-top:6px" class="tot-main">Total : ${tot.toFixed(2)} €</div>
-  `}
+  ${(() => {
+    const tvaMap = calcTvaMap(dv.lines || [], totalRemises, sousTotal);
+    const totalTVA = Object.values(tvaMap).reduce((s, v) => s + v.montantTva, 0);
+    if (totalTVA > 0) {
+      const rows = Object.entries(tvaMap)
+        .filter(([, v]) => v.montantTva > 0)
+        .map(([taux, v]) => `<div>TVA ${(taux * 100).toFixed(1).replace('.0', '')}% (base ${v.baseHT.toFixed(2)} €) : ${v.montantTva.toFixed(2)} €</div>`)
+        .join('');
+      return `<div style="margin-top:6px">Total HT : ${tot.toFixed(2)} €</div>${rows}<div class="tot-main">Total TTC : ${(tot + totalTVA).toFixed(2)} €</div>`;
+    }
+    return `<div style="margin-top:6px" class="tot-main">Total : ${tot.toFixed(2)} €</div>`;
+  })()}
   ${ds.afficherCaution ? `<div style="color:#6B7280">Caution estimée : ${caut} €</div>` : ''}
 </div>
 
@@ -189,7 +194,18 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
       body += `- ${l.name} (${DL[l.dur] || l.dur} ×${l.qty || 1}) : ${l.prix.toFixed(2)} €%0A`;
     });
     if (km > 0) body += `%0ALivraison aller : ${(km * kmt).toFixed(2)} €%0ARetour : ${(km * kmt).toFixed(2)} €`;
-    body += `%0A%0ATOTAL : ${tot.toFixed(2)} €%0ACaution : ${caut} €`;
+    const emailTvaMap = calcTvaMap(dv.lines || [], 0, tot);
+    const emailTotalTVA = Object.values(emailTvaMap).reduce((s, v) => s + v.montantTva, 0);
+    if (emailTotalTVA > 0) {
+      body += `%0A%0ATotal HT : ${tot.toFixed(2)} €`;
+      Object.entries(emailTvaMap).filter(([, v]) => v.montantTva > 0).forEach(([taux, v]) => {
+        body += `%0ATVA ${(taux * 100).toFixed(1).replace('.0', '')}% : ${v.montantTva.toFixed(2)} €`;
+      });
+      body += `%0ATotal TTC : ${(tot + emailTotalTVA).toFixed(2)} €`;
+    } else {
+      body += `%0A%0ATOTAL : ${tot.toFixed(2)} €`;
+    }
+    body += `%0ACaution : ${caut} €`;
     if (dv.notes) body += `%0A%0ANotes : ${dv.notes}`;
     if (p.mentions) body += `%0A%0A${p.mentions}`;
     body += `%0A%0A${p.nom || 'LocationForEvent'} · ${p.tel || ''} · ${p.site || ''}`;
@@ -372,15 +388,18 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
       });
       doc.setTextColor(107, 114, 128);
     }
-    const tvaRate = db.params.tva || 0;
-    if (tvaRate > 0) {
+    const tvaMap = calcTvaMap(dv.lines || [], totalRemises, sousTotal);
+    const totalTVA = Object.values(tvaMap).reduce((s, v) => s + v.montantTva, 0);
+    if (totalTVA > 0) {
       doc.setFontSize(10);
       doc.text(`Total HT : ${tot.toFixed(2)} €`, W - M, y, { align: 'right' }); y += 5;
-      doc.text(`TVA (${tvaLabel()}) : ${(tot * tvaRate).toFixed(2)} €`, W - M, y, { align: 'right' }); y += 5;
+      Object.entries(tvaMap).filter(([, v]) => v.montantTva > 0).forEach(([taux, v]) => {
+        doc.text(`TVA ${(taux * 100).toFixed(1).replace('.0', '')}% (base ${v.baseHT.toFixed(2)} €) : ${v.montantTva.toFixed(2)} €`, W - M, y, { align: 'right' }); y += 5;
+      });
       doc.setFontSize(13);
       doc.setFont(undefined, 'bold');
       doc.setTextColor(...c1rgb);
-      doc.text(`Total TTC : ${(tot * (1 + tvaRate)).toFixed(2)} €`, W - M, y + 1, { align: 'right' });
+      doc.text(`Total TTC : ${(tot + totalTVA).toFixed(2)} €`, W - M, y + 1, { align: 'right' });
     } else {
       doc.setFontSize(13);
       doc.setFont(undefined, 'bold');
