@@ -22,6 +22,21 @@ const Print = (() => {
   }
 
   // ── PDF (window.open) ─────────────────────────────────────
+  // Helper : recalcule prixNet de chaque ligne
+  function _calcLines(rawLines) {
+    return (rawLines || []).map(l => {
+      const ll = { ...l, remises: l.remises || [] };
+      let base = ll.prix;
+      for (const r of ll.remises) {
+        if (r.type === 'pourcentage') r.montant_deduit = arrondi(base * r.valeur / 100);
+        else r.montant_deduit = Math.min(r.valeur, base);
+        base -= r.montant_deduit;
+      }
+      ll.prixNet = Math.max(0, base);
+      return ll;
+    });
+  }
+
   function dv(dv) {
     if (!dv) return;
     const p   = db.params || {};
@@ -29,11 +44,12 @@ const Print = (() => {
     const isF = dv.doctype === 'facture';
     const km  = dv.km || 0;
     const kmt = p.km || 1.5;
-    const sousTotal = (dv.lines || []).reduce((s, l) => s + l.prix, 0);
+    const lines = _calcLines(dv.lines);
+    const sousTotal = lines.reduce((s, l) => s + l.prixNet, 0);
     const dvRemises = dv.remises || [];
     const totalRemises = dvRemises.reduce((s, r) => s + (r.montant_deduit || 0), 0);
     const tot = Math.max(0, sousTotal - totalRemises);
-    const caut = (dv.lines || []).reduce((s, l) => s + (l.caut || 0), 0);
+    const caut = lines.reduce((s, l) => s + (l.caut || 0), 0);
     const c1 = ds.couleurPrimaire;
     const c2 = isF ? '#059669' : ds.couleurSecondaire;
     const fontFam = _fontCss(ds.police);
@@ -124,17 +140,26 @@ ${(dv.client || dv.recup) ? `<div class="client-box">
     <th style="text-align:right">Total</th>
   </tr></thead>
   <tbody>
-    ${(dv.lines || []).map(l => {
+    ${lines.map(l => {
       const pBadge = l.dur === 'epicerie' ? ' <span style="font-size:9px;background:#FEF3C7;color:#D97706;padding:1px 5px;border-radius:99px">Épicerie</span>'
                    : l.dur === 'service'  ? ' <span style="font-size:9px;background:#EFF6FF;color:#1D4ED8;padding:1px 5px;border-radius:99px">Service</span>'
                    : '';
+      const hasRem = l.remises && l.remises.length > 0;
+      let remRows = '';
+      if (hasRem) {
+        remRows = l.remises.map(r => {
+          const lab = r.type === 'pourcentage' ? `(-${r.valeur}%)` : `(-${r.valeur.toFixed(2)} €)`;
+          return `<tr><td colspan="4" style="padding:1px 11px 1px 22px;font-size:10px;color:#DC2626;border-bottom:none">${r.nom} ${lab}</td><td style="padding:1px 11px;text-align:right;font-size:10px;color:#DC2626;border-bottom:none">- ${r.montant_deduit.toFixed(2)} €</td></tr>`;
+        }).join('') +
+        `<tr><td colspan="4" style="padding:1px 11px 1px 22px;font-size:10px;font-weight:600;color:#0F2744;border-bottom:1px solid #F3F4F6">Net HT</td><td style="padding:1px 11px;text-align:right;font-size:10px;font-weight:600;color:#0F2744;border-bottom:1px solid #F3F4F6">${l.prixNet.toFixed(2)} €</td></tr>`;
+      }
       return `<tr>
-      <td>${l.name}${pBadge}</td>
-      <td>${DL[l.dur] || l.dur}</td>
-      <td style="text-align:center">${l.qty || 1}</td>
-      <td style="text-align:right">${(l.pu || l.prix).toFixed(2)} €</td>
-      <td style="text-align:right;font-weight:600">${l.prix.toFixed(2)} €</td>
-    </tr>`}).join('')}
+      <td style="${hasRem ? 'border-bottom:none' : ''}">${l.name}${pBadge}</td>
+      <td style="${hasRem ? 'border-bottom:none' : ''}">${DL[l.dur] || l.dur}</td>
+      <td style="text-align:center;${hasRem ? 'border-bottom:none' : ''}">${l.qty || 1}</td>
+      <td style="text-align:right;${hasRem ? 'border-bottom:none' : ''}">${(l.pu || l.prix).toFixed(2)} €</td>
+      <td style="text-align:right;font-weight:600;${hasRem ? 'border-bottom:none' : ''}">${l.prix.toFixed(2)} €</td>
+    </tr>${remRows}`}).join('')}
   </tbody>
 </table>
 
@@ -149,7 +174,7 @@ ${(dv.client || dv.recup) ? `<div class="client-box">
     }).join('')}
   ` : ''}
   ${(() => {
-    const tvaMap = calcTvaMap(dv.lines || [], totalRemises, sousTotal);
+    const tvaMap = calcTvaMap(lines.map(l => ({ ...l, prix: l.prixNet })), totalRemises, sousTotal);
     const totalTVA = Object.values(tvaMap).reduce((s, v) => s + v.montantTva, 0);
     if (totalTVA > 0) {
       const rows = Object.entries(tvaMap)
@@ -179,8 +204,12 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
     const isF  = dv.doctype === 'facture';
     const km   = dv.km || 0;
     const kmt  = p.km || 1.5;
-    const tot  = (dv.lines || []).reduce((s, l) => s + l.prix, 0);
-    const caut = (dv.lines || []).reduce((s, l) => s + (l.caut || 0), 0);
+    const emailLines = _calcLines(dv.lines);
+    const sousTotal = emailLines.reduce((s, l) => s + l.prixNet, 0);
+    const dvRemises = dv.remises || [];
+    const totalRemGlob = dvRemises.reduce((s, r) => s + (r.montant_deduit || 0), 0);
+    const tot  = Math.max(0, sousTotal - totalRemGlob);
+    const caut = emailLines.reduce((s, l) => s + (l.caut || 0), 0);
 
     let body = `${isF ? 'Facture' : 'Devis'} N° ${dv.num || ''}%0A`;
     body += `Émis le ${fmtDate(dv.date || today())}%0A%0A`;
@@ -190,11 +219,25 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
     if (dv.recup)  body += `Récupération : ${fmtDt(dv.recup)}%0A`;
     if (dv.retour) body += `Retour : ${fmtDt(dv.retour)}%0A`;
     body += `%0ADÉTAIL :%0A`;
-    (dv.lines || []).forEach(l => {
+    emailLines.forEach(l => {
       body += `- ${l.name} (${DL[l.dur] || l.dur} ×${l.qty || 1}) : ${l.prix.toFixed(2)} €%0A`;
+      if (l.remises?.length) {
+        l.remises.forEach(r => {
+          const lab = r.type === 'pourcentage' ? `(-${r.valeur}%)` : `(-${r.valeur.toFixed(2)} €)`;
+          body += `  ${r.nom} ${lab} : -${r.montant_deduit.toFixed(2)} €%0A`;
+        });
+        body += `  Net HT : ${l.prixNet.toFixed(2)} €%0A`;
+      }
     });
     if (km > 0) body += `%0ALivraison aller : ${(km * kmt).toFixed(2)} €%0ARetour : ${(km * kmt).toFixed(2)} €`;
-    const emailTvaMap = calcTvaMap(dv.lines || [], 0, tot);
+    if (dvRemises.length) {
+      body += `%0A%0ASous-total : ${sousTotal.toFixed(2)} €`;
+      dvRemises.forEach(r => {
+        const lab = r.type === 'pourcentage' ? `(-${r.valeur}%)` : `(-${r.valeur.toFixed(2)} €)`;
+        body += `%0ARemise ${r.nom} ${lab} : -${(r.montant_deduit || 0).toFixed(2)} €`;
+      });
+    }
+    const emailTvaMap = calcTvaMap(emailLines.map(l => ({ ...l, prix: l.prixNet })), totalRemGlob, sousTotal);
     const emailTotalTVA = Object.values(emailTvaMap).reduce((s, v) => s + v.montantTva, 0);
     if (emailTotalTVA > 0) {
       body += `%0A%0ATotal HT : ${tot.toFixed(2)} €`;
@@ -226,11 +269,12 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
     const isF = dv.doctype === 'facture';
     const km  = dv.km || 0;
     const kmt = p.km || 1.5;
-    const sousTotal = (dv.lines || []).reduce((s, l) => s + l.prix, 0);
+    const pdfLines = _calcLines(dv.lines);
+    const sousTotal = pdfLines.reduce((s, l) => s + l.prixNet, 0);
     const dvRemises = dv.remises || [];
     const totalRemises = dvRemises.reduce((s, r) => s + (r.montant_deduit || 0), 0);
     const tot = Math.max(0, sousTotal - totalRemises);
-    const caut = (dv.lines || []).reduce((s, l) => s + (l.caut || 0), 0);
+    const caut = pdfLines.reduce((s, l) => s + (l.caut || 0), 0);
 
     // Parse design colors to RGB
     function hexToRgb(hex) {
@@ -352,13 +396,15 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
     // Lignes
     doc.setFont(undefined, 'normal');
     doc.setFontSize(9);
-    (dv.lines || []).forEach((l, i) => {
-      if (y > 265) { doc.addPage(); y = M; }
+    pdfLines.forEach((l, i) => {
+      if (y > 260) { doc.addPage(); y = M; }
       if (i % 2 === 1) {
+        const rowH = 7 + (l.remises?.length ? (l.remises.length + 1) * 4 : 0);
         doc.setFillColor(249, 250, 251);
-        doc.rect(M, y, W - 2 * M, 7, 'F');
+        doc.rect(M, y, W - 2 * M, rowH, 'F');
       }
       doc.setTextColor(17, 17, 17);
+      doc.setFontSize(9);
       const durLabel = l.dur === 'epicerie' ? 'Épicerie' : l.dur === 'service' ? 'Service' : (DL[l.dur] || l.dur);
       doc.text(l.name.substring(0, 38), M + 3, y + 5);
       doc.text(durLabel, colX[1] + 2, y + 5);
@@ -368,6 +414,25 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
       doc.text(l.prix.toFixed(2) + ' €', W - M - 3, y + 5, { align: 'right' });
       doc.setFont(undefined, 'normal');
       y += 7;
+      // Remises par ligne
+      if (l.remises?.length) {
+        doc.setFontSize(7.5);
+        l.remises.forEach(r => {
+          if (y > 275) { doc.addPage(); y = M; }
+          const lab = r.type === 'pourcentage' ? `(-${r.valeur}%)` : `(-${r.valeur.toFixed(2)} €)`;
+          doc.setTextColor(220, 38, 38);
+          doc.text(`${r.nom} ${lab}`, M + 8, y + 3);
+          doc.text(`- ${r.montant_deduit.toFixed(2)} €`, W - M - 3, y + 3, { align: 'right' });
+          y += 4;
+        });
+        doc.setTextColor(15, 39, 68);
+        doc.setFont(undefined, 'bold');
+        doc.text('Net HT :', M + 8, y + 3);
+        doc.text(l.prixNet.toFixed(2) + ' €', W - M - 3, y + 3, { align: 'right' });
+        doc.setFont(undefined, 'normal');
+        y += 4;
+        doc.setFontSize(9);
+      }
     });
 
     // ─ Totaux ─
@@ -388,7 +453,7 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
       });
       doc.setTextColor(107, 114, 128);
     }
-    const tvaMap = calcTvaMap(dv.lines || [], totalRemises, sousTotal);
+    const tvaMap = calcTvaMap(pdfLines.map(l => ({ ...l, prix: l.prixNet })), totalRemises, sousTotal);
     const totalTVA = Object.values(tvaMap).reduce((s, v) => s + v.montantTva, 0);
     if (totalTVA > 0) {
       doc.setFontSize(10);

@@ -770,13 +770,13 @@ table.dt tbody tr:hover .row-actions { opacity: 1; }
 /* ═══════════════════════════════════════════════════════════════
    DEVIS LINES
    ═══════════════════════════════════════════════════════════════ */
+.dv-line-wrap { padding: 8px 0; border-bottom: 1px solid var(--border); }
+.dv-line-wrap:last-child { border-bottom: none; }
 .dv-line {
   display: flex; align-items: center; gap: 8px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
   font-size: .82rem;
 }
-.dv-line:last-child { border-bottom: none; }
+.dv-line .line-check { width: 15px; height: 15px; flex-shrink: 0; cursor: pointer; accent-color: var(--blue); }
 .dv-ln  { flex: 1; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
 .dv-dur { font-size: .72rem; color: var(--text3); width: 84px; flex-shrink: 0; }
 .dv-qty { width: 28px; text-align: center; color: var(--text3); font-size: .75rem; flex-shrink: 0; }
@@ -785,6 +785,20 @@ table.dt tbody tr:hover .row-actions { opacity: 1; }
 .dv-edit:hover { color: var(--blue); background: var(--blue-l); }
 .dv-del { background: none; border: none; cursor: pointer; color: var(--text4); font-size: .9rem; padding: 2px 5px; border-radius: 4px; flex-shrink: 0; transition: all var(--t); }
 .dv-del:hover { color: var(--red); background: var(--red-l); }
+/* Remises par ligne */
+.dv-line-remises { padding-left: 30px; }
+.dv-line-rem { display: flex; align-items: center; gap: 6px; font-size: .72rem; color: var(--red); padding: 2px 0; }
+.dv-line-rem .rem-label { flex: 1; }
+.dv-line-rem .rem-amount { font-weight: 600; white-space: nowrap; }
+.dv-line-net { padding-left: 30px; font-size: .74rem; color: var(--navy); font-weight: 600; padding-top: 2px; }
+/* Barre sélection lignes */
+.dv-sel-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: var(--blue-l); border: 1px solid #BFDBFE; border-radius: var(--r-sm);
+  padding: 8px 12px; margin: 8px 0; font-size: .78rem;
+}
+.dv-sel-bar .sel-count { font-weight: 600; color: var(--blue); white-space: nowrap; }
+.dv-sel-bar select { font-size: .78rem; padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--r-sm); flex: 1; max-width: 200px; }
 .dv-total-row {
   display: flex; justify-content: space-between;
   padding: 12px 0 5px;

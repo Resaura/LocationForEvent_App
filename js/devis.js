@@ -179,7 +179,7 @@ const Devis = (() => {
       return;
     }
 
-    _lines.push({ id: Date.now(), name, dur, qty, pu: prix / qty, prix, caut, tva: _selItem?.tva || 0 });
+    _lines.push({ id: Date.now(), name, dur, qty, pu: prix / qty, prix, caut, tva: _selItem?.tva || 0, remises: [] });
 
     // Reset champs ligne
     _setVal('nd-mat-q', '');
@@ -239,6 +239,21 @@ const Devis = (() => {
     }
   }
 
+  // ── Calcul remises d'une ligne ─────────────────────────────
+  function _applyLineRemises(l) {
+    if (!l.remises) l.remises = [];
+    let base = l.prix;
+    for (const r of l.remises) {
+      if (r.type === 'pourcentage') {
+        r.montant_deduit = arrondi(base * r.valeur / 100);
+      } else {
+        r.montant_deduit = Math.min(r.valeur, base);
+      }
+      base -= r.montant_deduit;
+    }
+    l.prixNet = Math.max(0, base);
+  }
+
   // ── Rendu des lignes ──────────────────────────────────────
   function renderLines() {
     const wrap  = document.getElementById('nd-lines-wrap');
@@ -249,10 +264,14 @@ const Devis = (() => {
     if (!_lines.length) {
       wrap.style.display  = 'none';
       empty.style.display = 'block';
+      _updateSelBar();
       return;
     }
     wrap.style.display  = 'block';
     empty.style.display = 'none';
+
+    // Recalculer les remises de chaque ligne
+    _lines.forEach(l => _applyLineRemises(l));
 
     linesEl.innerHTML = _lines.map(l => {
       const badge = l.dur === 'epicerie'
@@ -260,51 +279,147 @@ const Devis = (() => {
         : l.dur === 'service'
         ? '<span style="font-size:.65rem;background:#EFF6FF;color:#1D4ED8;padding:1px 6px;border-radius:99px;font-weight:600;margin-left:4px"><i data-lucide="wrench"></i> Service</span>'
         : '';
-      return `<div class="dv-line">
-        <span class="dv-ln">${l.name}${badge}</span>
-        <span class="dv-dur">${DL[l.dur] || l.dur}</span>
-        <span class="dv-qty">×${l.qty}</span>
-        <span class="dv-pr">${l.prix.toFixed(2)} €</span>
-        <button class="dv-edit" onclick="Devis.editLine(${l.id})" title="Modifier"><i data-lucide="pencil"></i></button>
-        <button class="dv-del" onclick="Devis.delLine(${l.id})"><i data-lucide="x"></i></button>
+      const hasRem = l.remises && l.remises.length > 0;
+
+      // Remises par ligne
+      let remHtml = '';
+      if (hasRem) {
+        remHtml = `<div class="dv-line-remises">${l.remises.map((r, ri) => {
+          const lab = r.type === 'pourcentage' ? `(-${r.valeur}%)` : `(-${r.valeur.toFixed(2)} €)`;
+          return `<div class="dv-line-rem">
+            <span class="rem-label"><i data-lucide="tag"></i> ${r.nom} ${lab}</span>
+            <span class="rem-amount">- ${r.montant_deduit.toFixed(2)} €</span>
+            <button class="dv-del" onclick="Devis.removeLineRemise(${l.id},${ri})" title="Retirer"><i data-lucide="x"></i></button>
+          </div>`;
+        }).join('')}</div>
+        <div class="dv-line-net">Net HT : ${l.prixNet.toFixed(2)} €</div>`;
+      }
+
+      return `<div class="dv-line-wrap">
+        <div class="dv-line">
+          <input type="checkbox" class="line-check" data-id="${l.id}" onchange="Devis.onLineCheck()">
+          <span class="dv-ln">${l.name}${badge}</span>
+          <span class="dv-dur">${DL[l.dur] || l.dur}</span>
+          <span class="dv-qty">×${l.qty}</span>
+          <span class="dv-pr">${l.prix.toFixed(2)} €</span>
+          <button class="dv-edit" onclick="Devis.editLine(${l.id})" title="Modifier"><i data-lucide="pencil"></i></button>
+          <button class="dv-del" onclick="Devis.delLine(${l.id})"><i data-lucide="x"></i></button>
+        </div>
+        ${remHtml}
       </div>`;
     }).join('');
     lucide.createIcons({ nodes: linesEl.querySelectorAll('[data-lucide]') });
 
+    _updateSelBar();
     updateTotals();
+  }
+
+  // ── Barre de sélection ────────────────────────────────────
+  function _getCheckedIds() {
+    return Array.from(document.querySelectorAll('#nd-lines .line-check:checked')).map(cb => parseInt(cb.dataset.id));
+  }
+
+  function _updateSelBar() {
+    const barEl = document.getElementById('nd-sel-bar');
+    if (!barEl) return;
+    const ids = _getCheckedIds();
+    if (!ids.length) {
+      barEl.style.display = 'none';
+      return;
+    }
+    barEl.style.display = 'flex';
+    const actives = (db.remises || []).filter(r => r.actif);
+    barEl.innerHTML = `
+      <span class="sel-count">${ids.length} ligne${ids.length > 1 ? 's' : ''} sélectionnée${ids.length > 1 ? 's' : ''}</span>
+      <select id="nd-sel-remise">
+        <option value="">— Remise —</option>
+        ${actives.map(r => {
+          const val = r.type === 'pourcentage' ? `${r.valeur}%` : `${r.valeur.toFixed(2)} €`;
+          return `<option value="${r.id}">${r.nom} (${val})</option>`;
+        }).join('')}
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="Devis.applyRemiseToSelected()"><i data-lucide="tag"></i> Appliquer</button>
+      <button class="btn btn-ghost btn-sm" onclick="Devis.deselectAll()">Désélectionner</button>`;
+    lucide.createIcons({ nodes: barEl.querySelectorAll('[data-lucide]') });
+  }
+
+  function onLineCheck() { _updateSelBar(); }
+
+  function deselectAll() {
+    document.querySelectorAll('#nd-lines .line-check').forEach(cb => cb.checked = false);
+    _updateSelBar();
+  }
+
+  // ── Appliquer une remise aux lignes sélectionnées ─────────
+  function applyRemiseToSelected() {
+    const selEl = document.getElementById('nd-sel-remise');
+    if (!selEl) return;
+    const rId = parseInt(selEl.value);
+    if (!rId) { App.toast('Sélectionnez une remise', 'warn'); return; }
+
+    const r = db.remises.find(x => x.id === rId);
+    if (!r) return;
+
+    const ids = _getCheckedIds();
+    if (!ids.length) { App.toast('Aucune ligne sélectionnée', 'warn'); return; }
+
+    let count = 0;
+    ids.forEach(id => {
+      const l = _lines.find(x => x.id === id);
+      if (!l) return;
+      if (!l.remises) l.remises = [];
+      // Ne pas ajouter la même remise deux fois sur la même ligne
+      if (l.remises.find(x => x.nom === r.nom)) return;
+      l.remises.push({ nom: r.nom, type: r.type, valeur: r.valeur, montant_deduit: 0 });
+      count++;
+    });
+
+    if (!count) { App.toast('Remise déjà appliquée sur ces lignes', 'warn'); return; }
+    renderLines();
+    App.toast(`Remise appliquée sur ${count} ligne${count > 1 ? 's' : ''} ✅`, 'ok');
+  }
+
+  // ── Retirer une remise d'une ligne ────────────────────────
+  function removeLineRemise(lineId, remIdx) {
+    const l = _lines.find(x => x.id === lineId);
+    if (!l || !l.remises) return;
+    l.remises.splice(remIdx, 1);
+    renderLines();
   }
 
   // ── Totaux ────────────────────────────────────────────────
   function updateTotals() {
-    const sousTotal = _lines.reduce((s, l) => s + l.prix, 0);
+    // Sous-total = somme des prixNet (après remises par ligne)
+    const sousTotalBrut = _lines.reduce((s, l) => s + l.prix, 0);
+    const sousTotal     = _lines.reduce((s, l) => s + (l.prixNet != null ? l.prixNet : l.prix), 0);
     const caut  = _lines.reduce((s, l) => s + (l.caut || 0), 0);
     const km    = parseFloat(_getVal('nd-km')) || 0;
     const kmt   = db.params?.km || 1.5;
     const lp    = labelPrix();
     const suffix = lp ? ` ${lp}` : '';
 
-    // Calcul des remises
-    let totalRemises = 0;
+    // Calcul des remises globales (sur le sous-total après remises par ligne)
+    let totalRemisesGlobales = 0;
     _remises.forEach(r => {
       if (r.type === 'pourcentage') {
-        r.montant_deduit = sousTotal * r.valeur / 100;
+        r.montant_deduit = arrondi(sousTotal * r.valeur / 100);
       } else {
-        r.montant_deduit = r.valeur;
+        r.montant_deduit = Math.min(r.valeur, sousTotal - totalRemisesGlobales);
       }
-      totalRemises += r.montant_deduit;
+      totalRemisesGlobales += r.montant_deduit;
     });
 
-    const totHT = Math.max(0, sousTotal - totalRemises);
+    const totHT = Math.max(0, sousTotal - totalRemisesGlobales);
 
     _setTxt('nd-tot',  prixAffiche(totHT).toFixed(2) + ' €' + suffix);
     _setTxt('nd-caut', caut + ' €');
 
-    // Remises appliquées
+    // Remises globales appliquées
     const remEl = document.getElementById('nd-remises-applied');
     if (remEl) {
       if (_remises.length) {
         remEl.style.display = 'block';
-        remEl.innerHTML = `<div style="font-size:.72rem;color:var(--grey);margin-bottom:4px">Sous-total : ${sousTotal.toFixed(2)} €</div>` +
+        remEl.innerHTML = `<div style="font-size:.72rem;color:var(--grey);margin-bottom:4px">Sous-total après remises lignes : ${sousTotal.toFixed(2)} €</div>` +
           _remises.map((r, i) => {
             const label = r.type === 'pourcentage' ? `(-${r.valeur}%)` : `(-${r.valeur.toFixed(2)} €)`;
             return `<div class="flex jb items-c" style="font-size:.78rem;color:var(--red);padding:2px 0">
@@ -315,15 +430,16 @@ const Devis = (() => {
               </span>
             </div>`;
           }).join('');
+        lucide.createIcons({ nodes: remEl.querySelectorAll('[data-lucide]') });
       } else {
         remEl.style.display = 'none';
       }
     }
 
-    // TVA détail par taux sous le total
+    // TVA détail par taux — basé sur prixNet de chaque ligne
     const tvaEl = document.getElementById('nd-tva-detail');
     if (tvaEl) {
-      const tvaMap = calcTvaMap(_lines, totalRemises, sousTotal);
+      const tvaMap = calcTvaMap(_lines.map(l => ({ ...l, prix: l.prixNet != null ? l.prixNet : l.prix })), totalRemisesGlobales, sousTotal);
       const totalTVA = Object.values(tvaMap).reduce((s, v) => s + v.montantTva, 0);
       if (totalTVA > 0) {
         tvaEl.style.display = 'block';
@@ -511,6 +627,7 @@ const Devis = (() => {
       prix: totalPrix,
       caut: 0,
       tva:  svc.tva || 0,
+      remises: [],
     });
 
     // Reset le picker
@@ -631,6 +748,7 @@ const Devis = (() => {
       prix,
       caut: 0,
       tva:  _selEpi.tva || 0,
+      remises: [],
     });
 
     // Reset picker
@@ -646,12 +764,18 @@ const Devis = (() => {
 
   // ── Construire l'objet devis ──────────────────────────────
   function _buildData(doctype = 'devis') {
-    const sousTotal = _lines.reduce((s, l) => s + l.prix, 0);
-    let totalRemises = 0;
+    // Recalculer remises par ligne
+    _lines.forEach(l => _applyLineRemises(l));
+    const sousTotal = _lines.reduce((s, l) => s + (l.prixNet != null ? l.prixNet : l.prix), 0);
+    let totalRemisesGlobales = 0;
     const remisesCopy = JSON.parse(JSON.stringify(_remises));
     remisesCopy.forEach(r => {
-      r.montant_deduit = r.type === 'pourcentage' ? sousTotal * r.valeur / 100 : r.valeur;
-      totalRemises += r.montant_deduit;
+      if (r.type === 'pourcentage') {
+        r.montant_deduit = arrondi(sousTotal * r.valeur / 100);
+      } else {
+        r.montant_deduit = Math.min(r.valeur, sousTotal - totalRemisesGlobales);
+      }
+      totalRemisesGlobales += r.montant_deduit;
     });
     return {
       date:   today(),
@@ -666,7 +790,7 @@ const Devis = (() => {
       notes:  _getVal('nd-notes'),
       lines:  JSON.parse(JSON.stringify(_lines)),
       remises: remisesCopy,
-      total:  Math.max(0, sousTotal - totalRemises),
+      total:  Math.max(0, sousTotal - totalRemisesGlobales),
       doctype
     };
   }
@@ -891,6 +1015,7 @@ const Devis = (() => {
   return { prefill, fillFromClient, renderCliList, matSearch, pickMat, calcLine, addLine, delLine, editLine,
            renderLines, updateTotals, save, saveAsFacture, print, download, edit, reset, calcDuree,
            addRemise, removeRemise,
+           onLineCheck, deselectAll, applyRemiseToSelected, removeLineRemise,
            renderServicePicker, updateServiceOptions, refreshServiceTotal, addServiceLine,
            renderEpiceriePicker, epiSearch, pickEpi, epiCalc, addEpiLine };
 })();
@@ -1105,11 +1230,23 @@ const Historique = (() => {
     const p   = db.params || {};
     const km  = dv.km || 0;
     const kmt = p.km || 1.5;
-    const sousTotal = (dv.lines || []).reduce((s, l) => s + l.prix, 0);
+    // Calculer prixNet pour chaque ligne
+    const lines = (dv.lines || []).map(l => {
+      const ll = { ...l, remises: l.remises || [] };
+      let base = ll.prix;
+      for (const r of ll.remises) {
+        if (r.type === 'pourcentage') r.montant_deduit = arrondi(base * r.valeur / 100);
+        else r.montant_deduit = Math.min(r.valeur, base);
+        base -= r.montant_deduit;
+      }
+      ll.prixNet = Math.max(0, base);
+      return ll;
+    });
+    const sousTotal = lines.reduce((s, l) => s + l.prixNet, 0);
     const dvRemises = dv.remises || [];
     const totalRemises = dvRemises.reduce((s, r) => s + (r.montant_deduit || 0), 0);
     const tot  = Math.max(0, sousTotal - totalRemises);
-    const caut = (dv.lines || []).reduce((s, l) => s + (l.caut || 0), 0);
+    const caut = lines.reduce((s, l) => s + (l.caut || 0), 0);
     const statut = dv.statut || 'brouillon';
 
     return `<div style="font-size:.84rem">
@@ -1137,19 +1274,28 @@ const Historique = (() => {
           <th style="padding:7px 10px;text-align:left;border-bottom:2px solid #E5E7EB">Matériel</th>
           <th style="padding:7px 10px;text-align:center;border-bottom:2px solid #E5E7EB">Durée</th>
           <th style="padding:7px 10px;text-align:center;border-bottom:2px solid #E5E7EB">Qté</th>
-          <th style="padding:7px 10px;text-align:right;border-bottom:2px solid #E5E7EB">Prix</th>
+          <th style="padding:7px 10px;text-align:right;border-bottom:2px solid #E5E7EB">Prix HT</th>
         </tr></thead>
         <tbody>
-          ${(dv.lines || []).map(l => {
+          ${lines.map(l => {
             const lnBadge = l.dur === 'epicerie' ? ' <span style="font-size:.6rem;background:#FEF3C7;color:#D97706;padding:1px 5px;border-radius:99px"><i data-lucide="shopping-cart"></i></span>'
                           : l.dur === 'service'  ? ' <span style="font-size:.6rem;background:#EFF6FF;color:#1D4ED8;padding:1px 5px;border-radius:99px"><i data-lucide="wrench"></i></span>'
                           : '';
+            const hasRem = l.remises && l.remises.length > 0;
+            let remRows = '';
+            if (hasRem) {
+              remRows = l.remises.map(r => {
+                const lab = r.type === 'pourcentage' ? `(-${r.valeur}%)` : `(-${r.valeur.toFixed(2)} €)`;
+                return `<tr><td colspan="3" style="padding:2px 10px 2px 24px;font-size:.7rem;color:#DC2626;border-bottom:none"><i data-lucide="tag"></i> ${r.nom} ${lab}</td><td style="padding:2px 10px;text-align:right;font-size:.7rem;color:#DC2626;border-bottom:none">- ${r.montant_deduit.toFixed(2)} €</td></tr>`;
+              }).join('') +
+              `<tr><td colspan="3" style="padding:2px 10px 2px 24px;font-size:.72rem;font-weight:600;color:var(--navy);border-bottom:1px solid #F3F4F6">Net HT</td><td style="padding:2px 10px;text-align:right;font-size:.72rem;font-weight:600;color:var(--navy);border-bottom:1px solid #F3F4F6">${l.prixNet.toFixed(2)} €</td></tr>`;
+            }
             return `<tr>
-            <td style="padding:7px 10px;border-bottom:1px solid #F3F4F6">${l.name}${lnBadge}</td>
-            <td style="padding:7px 10px;border-bottom:1px solid #F3F4F6;text-align:center">${DL[l.dur] || l.dur}</td>
-            <td style="padding:7px 10px;border-bottom:1px solid #F3F4F6;text-align:center">${l.qty || 1}</td>
-            <td style="padding:7px 10px;border-bottom:1px solid #F3F4F6;text-align:right;font-weight:600">${l.prix?.toFixed(2)} €</td>
-          </tr>`}).join('')}
+            <td style="padding:7px 10px;border-bottom:${hasRem ? 'none' : '1px solid #F3F4F6'}">${l.name}${lnBadge}</td>
+            <td style="padding:7px 10px;border-bottom:${hasRem ? 'none' : '1px solid #F3F4F6'};text-align:center">${DL[l.dur] || l.dur}</td>
+            <td style="padding:7px 10px;border-bottom:${hasRem ? 'none' : '1px solid #F3F4F6'};text-align:center">${l.qty || 1}</td>
+            <td style="padding:7px 10px;border-bottom:${hasRem ? 'none' : '1px solid #F3F4F6'};text-align:right;font-weight:600">${l.prix?.toFixed(2)} €</td>
+          </tr>${remRows}`}).join('')}
         </tbody>
       </table>
       <div style="text-align:right;font-size:.84rem">
@@ -1163,7 +1309,7 @@ const Historique = (() => {
           }).join('')}
         ` : ''}
         ${(() => {
-          const tvaMap = calcTvaMap(dv.lines || [], totalRemises, sousTotal);
+          const tvaMap = calcTvaMap(lines.map(l => ({ ...l, prix: l.prixNet })), totalRemises, sousTotal);
           const totalTVA = Object.values(tvaMap).reduce((s, v) => s + v.montantTva, 0);
           if (totalTVA > 0) {
             const rows = Object.entries(tvaMap)
