@@ -62,11 +62,12 @@ const Remises = (() => {
           <span style="color:var(--grey);font-size:.78rem;margin-left:4px">${val}</span>
           ${badge}
         </span>
-        <button class="btn btn-ghost btn-sm" onclick="Remises.toggle(${r.id})" style="padding:2px 8px;font-size:.72rem">${r.actif ? '⏸️' : '▶️'}</button>
-        <button class="btn btn-ghost btn-sm" onclick="Remises.openModal(${r.id})" style="padding:2px 8px;font-size:.72rem">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="Remises.del(${r.id})" style="padding:2px 8px;font-size:.72rem">🗑️</button>
+        <button class="btn btn-ghost btn-sm" onclick="Remises.toggle(${r.id})" style="padding:2px 8px;font-size:.72rem">${r.actif ? '<i data-lucide="pause"></i>' : '<i data-lucide="play"></i>'}</button>
+        <button class="btn btn-ghost btn-sm" onclick="Remises.openModal(${r.id})" style="padding:2px 8px;font-size:.72rem"><i data-lucide="pencil"></i></button>
+        <button class="btn btn-danger btn-sm" onclick="Remises.del(${r.id})" style="padding:2px 8px;font-size:.72rem"><i data-lucide="trash-2"></i></button>
       </div>`;
     }).join('');
+    lucide.createIcons({ nodes: el.querySelectorAll('[data-lucide]') });
   }
 
   // ── Modale création / édition ───────────────────────────────

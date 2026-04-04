@@ -120,7 +120,7 @@ const Epicerie = (() => {
         <div class="card-hd" style="padding:10px 14px">
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-              <span style="font-size:.88rem;font-weight:600">🛒 ${p.nom}</span>
+              <span style="font-size:.88rem;font-weight:600"><i data-lucide="shopping-cart"></i> ${p.nom}</span>
               ${activeBadge}
               ${consBadge}
               <span class="badge bg-grey" style="font-size:.66rem">${p.categorie || '—'}</span>
@@ -130,13 +130,14 @@ const Epicerie = (() => {
             </div>
           </div>
           <div class="btn-row" style="flex-shrink:0">
-            <button class="btn btn-ghost btn-sm" onclick="Epicerie.openModal(${p.id})">✏️</button>
+            <button class="btn btn-ghost btn-sm" onclick="Epicerie.openModal(${p.id})"><i data-lucide="pencil"></i></button>
             <button class="btn btn-ghost btn-sm" onclick="Epicerie.toggle(${p.id})">${toggleIcon} ${toggleLabel}</button>
-            <button class="btn btn-danger btn-sm" onclick="Epicerie.del(${p.id})">🗑️</button>
+            <button class="btn btn-danger btn-sm" onclick="Epicerie.del(${p.id})"><i data-lucide="trash-2"></i></button>
           </div>
         </div>
       </div>`;
     }).join('');
+    lucide.createIcons({ nodes: listEl.querySelectorAll('[data-lucide]') });
   }
 
   // ── Modale création / édition ─────────────────────────────

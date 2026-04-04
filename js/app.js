@@ -256,7 +256,7 @@ const App = {
       const aRelancer = typeof needsRelance !== 'undefined' ? db.devis.filter(needsRelance) : [];
       if (aRelancer.length) {
         alerts.push(`<div class="dash-alert">
-          <div class="dash-alert-ic" style="background:var(--gold-l)">🔔</div>
+          <div class="dash-alert-ic" style="background:var(--gold-l)"><i data-lucide="bell"></i></div>
           <div class="dash-alert-body">
             <div class="dash-alert-title">${aRelancer.length} devis à relancer</div>
             <div class="dash-alert-desc">${aRelancer.slice(0,3).map(d => d.num || '—').join(', ')}${aRelancer.length > 3 ? '…' : ''}</div>
@@ -275,7 +275,7 @@ const App = {
       });
       if (expired.length) {
         alerts.push(`<div class="dash-alert">
-          <div class="dash-alert-ic" style="background:var(--red-l)">⏰</div>
+          <div class="dash-alert-ic" style="background:var(--red-l)"><i data-lucide="clock"></i></div>
           <div class="dash-alert-body">
             <div class="dash-alert-title">${expired.length} devis expiré${expired.length > 1 ? 's' : ''}</div>
             <div class="dash-alert-desc">Validité dépassée (${validDays} jours)</div>
@@ -294,7 +294,7 @@ const App = {
       });
       if (pendingPay.length) {
         alerts.push(`<div class="dash-alert">
-          <div class="dash-alert-ic" style="background:var(--blue-l)">💳</div>
+          <div class="dash-alert-ic" style="background:var(--blue-l)"><i data-lucide="credit-card"></i></div>
           <div class="dash-alert-body">
             <div class="dash-alert-title">${pendingPay.length} paiement${pendingPay.length > 1 ? 's' : ''} en attente</div>
             <div class="dash-alert-desc">Depuis plus de 7 jours</div>
@@ -317,7 +317,7 @@ const App = {
       }
       if (conflicts.length) {
         alerts.push(`<div class="dash-alert">
-          <div class="dash-alert-ic" style="background:#FEE2E2">⚠️</div>
+          <div class="dash-alert-ic" style="background:#FEE2E2"><i data-lucide="alert-triangle"></i></div>
           <div class="dash-alert-body">
             <div class="dash-alert-title">${conflicts.length} conflit${conflicts.length > 1 ? 's' : ''} calendrier</div>
             <div class="dash-alert-desc">${conflicts[0].items[0].name} : ${conflicts[0].a.num} / ${conflicts[0].b.num}</div>
@@ -327,6 +327,7 @@ const App = {
       }
 
       actionsEl.innerHTML = alerts.length ? alerts.join('') : '<div style="padding:16px;color:var(--grey);font-size:.84rem">Aucune action requise — tout est à jour ✅</div>';
+      lucide.createIcons({ nodes: actionsEl.querySelectorAll('[data-lucide]') });
     }
 
     // ── Activité récente ──
@@ -341,7 +342,7 @@ const App = {
         const isF = d.doctype === 'facture';
         events.push({
           ts,
-          icon: isF ? '🧾' : '📋',
+          icon: isF ? '<i data-lucide="file-text"></i>' : '<i data-lucide="clipboard"></i>',
           bg: isF ? 'var(--green-l)' : 'var(--blue-l)',
           text: `${isF ? 'Facture' : 'Devis'} ${d.num || '—'} — ${d.client || 'Sans client'}`,
           sub: statut !== 'brouillon' ? (typeof statutBadge !== 'undefined' ? statutBadge(statut) : statut) : 'Créé',
@@ -354,7 +355,7 @@ const App = {
         const ts = Number(c.id) || 0;
         events.push({
           ts,
-          icon: '👤',
+          icon: '<i data-lucide="user"></i>',
           bg: 'var(--purple-l)',
           text: `Nouveau client : ${c.nom}`,
           sub: c.email || c.tel || '',
@@ -368,7 +369,7 @@ const App = {
         if (p.acompte_statut === 'recu' && p.acompte_date) {
           events.push({
             ts: new Date(p.acompte_date).getTime() || 0,
-            icon: '💰',
+            icon: '<i data-lucide="dollar-sign"></i>',
             bg: 'var(--green-l)',
             text: `Acompte reçu — ${dv?.num || '—'}`,
             sub: `${prixAffiche((p.total || 0) * (p.acompte_pct || 0) / 100).toFixed(2)} €`,
@@ -378,7 +379,7 @@ const App = {
         if (p.solde_statut === 'recu' && p.solde_date) {
           events.push({
             ts: new Date(p.solde_date).getTime() || 0,
-            icon: '💰',
+            icon: '<i data-lucide="dollar-sign"></i>',
             bg: 'var(--green-l)',
             text: `Solde reçu — ${dv?.num || '—'}`,
             sub: `${prixAffiche((p.total || 0) - ((p.total || 0) * (p.acompte_pct || 0) / 100)).toFixed(2)} €`,
@@ -402,6 +403,7 @@ const App = {
             </div>
             <div class="dash-act-date">${e.date}</div>
           </div>`).join('');
+        lucide.createIcons({ nodes: activityEl.querySelectorAll('[data-lucide]') });
       }
     }
   },
@@ -661,9 +663,10 @@ const Params = {
     el.innerHTML = db.types_evenement.map((t, i) => `
       <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">
         <span style="flex:1;font-size:.84rem">${t}</span>
-        <button class="btn btn-ghost btn-sm" onclick="Params.renameType(${i})" style="padding:2px 8px;font-size:.72rem">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="Params.delType(${i})" style="padding:2px 8px;font-size:.72rem">🗑️</button>
+        <button class="btn btn-ghost btn-sm" onclick="Params.renameType(${i})" style="padding:2px 8px;font-size:.72rem"><i data-lucide="pencil"></i></button>
+        <button class="btn btn-danger btn-sm" onclick="Params.delType(${i})" style="padding:2px 8px;font-size:.72rem"><i data-lucide="trash-2"></i></button>
       </div>`).join('');
+    lucide.createIcons({ nodes: el.querySelectorAll('[data-lucide]') });
   },
 
   async addType() {

@@ -75,10 +75,12 @@ const Devis = (() => {
       const dv = db.devis.find(d => d.id === _editId);
       if (dv && badge) { badge.textContent = dv.num; badge.style.display = ''; }
       const title = document.getElementById('nd-title');
-      if (title) title.textContent = '✏️ Modifier le devis';
+      if (title) title.innerHTML = '<i data-lucide="pencil"></i> Modifier le devis';
+      lucide.createIcons({ nodes: title ? [title.querySelector('[data-lucide]')] : [] });
     } else {
       const title = document.getElementById('nd-title');
-      if (title) title.textContent = '✏️ Nouveau devis';
+      if (title) title.innerHTML = '<i data-lucide="pencil"></i> Nouveau devis';
+      lucide.createIcons({ nodes: title ? [title.querySelector('[data-lucide]')] : [] });
     }
   }
 
@@ -236,19 +238,20 @@ const Devis = (() => {
 
     linesEl.innerHTML = _lines.map(l => {
       const badge = l.dur === 'epicerie'
-        ? '<span style="font-size:.65rem;background:#FEF3C7;color:#D97706;padding:1px 6px;border-radius:99px;font-weight:600;margin-left:4px">🛒 Épicerie</span>'
+        ? '<span style="font-size:.65rem;background:#FEF3C7;color:#D97706;padding:1px 6px;border-radius:99px;font-weight:600;margin-left:4px"><i data-lucide="shopping-cart"></i> Épicerie</span>'
         : l.dur === 'service'
-        ? '<span style="font-size:.65rem;background:#EFF6FF;color:#1D4ED8;padding:1px 6px;border-radius:99px;font-weight:600;margin-left:4px">🔧 Service</span>'
+        ? '<span style="font-size:.65rem;background:#EFF6FF;color:#1D4ED8;padding:1px 6px;border-radius:99px;font-weight:600;margin-left:4px"><i data-lucide="wrench"></i> Service</span>'
         : '';
       return `<div class="dv-line">
         <span class="dv-ln">${l.name}${badge}</span>
         <span class="dv-dur">${DL[l.dur] || l.dur}</span>
         <span class="dv-qty">×${l.qty}</span>
         <span class="dv-pr">${l.prix.toFixed(2)} €</span>
-        <button class="dv-edit" onclick="Devis.editLine(${l.id})" title="Modifier">✏️</button>
-        <button class="dv-del" onclick="Devis.delLine(${l.id})">✕</button>
+        <button class="dv-edit" onclick="Devis.editLine(${l.id})" title="Modifier"><i data-lucide="pencil"></i></button>
+        <button class="dv-del" onclick="Devis.delLine(${l.id})"><i data-lucide="x"></i></button>
       </div>`;
     }).join('');
+    lucide.createIcons({ nodes: linesEl.querySelectorAll('[data-lucide]') });
 
     updateTotals();
   }
@@ -287,10 +290,10 @@ const Devis = (() => {
           _remises.map((r, i) => {
             const label = r.type === 'pourcentage' ? `(-${r.valeur}%)` : `(-${r.valeur.toFixed(2)} €)`;
             return `<div class="flex jb items-c" style="font-size:.78rem;color:var(--red);padding:2px 0">
-              <span>🏷️ ${r.nom} ${label}</span>
+              <span><i data-lucide="tag"></i> ${r.nom} ${label}</span>
               <span style="display:flex;align-items:center;gap:4px">
                 - ${r.montant_deduit.toFixed(2)} €
-                <button class="dv-del" style="font-size:.7rem" onclick="Devis.removeRemise(${i})">✕</button>
+                <button class="dv-del" style="font-size:.7rem" onclick="Devis.removeRemise(${i})"><i data-lucide="x"></i></button>
               </span>
             </div>`;
           }).join('');
@@ -382,7 +385,7 @@ const Devis = (() => {
       <div id="nd-svc-opts" style="display:none;margin-top:10px"></div>
       <div id="nd-svc-total" style="display:none;font-size:.82rem;color:var(--navy);font-weight:700;text-align:right;margin-top:6px"></div>
       <button class="btn btn-primary btn-sm fw mt-2" id="nd-svc-add-btn" style="display:none"
-              onclick="Devis.addServiceLine()">🔧 Ajouter ce service au devis</button>`;
+              onclick="Devis.addServiceLine()"><i data-lucide="wrench"></i> Ajouter ce service au devis</button>`;
   }
 
   // ── Mise à jour des options selon le service choisi ───────
@@ -536,7 +539,7 @@ const Devis = (() => {
             <div id="nd-epi-total" style="font-size:.88rem;font-weight:700;color:var(--navy);padding:8px 0">0,00 €</div>
           </div>
         </div>
-        <button class="btn btn-primary btn-sm fw" onclick="Devis.addEpiLine()">🛒 Ajouter au devis</button>
+        <button class="btn btn-primary btn-sm fw" onclick="Devis.addEpiLine()"><i data-lucide="shopping-cart"></i> Ajouter au devis</button>
       </div>`;
   }
 
@@ -770,7 +773,8 @@ const Devis = (() => {
     const diffMs = d2 - d1;
     if (diffMs <= 0) {
       hint.style.display = 'block';
-      hint.innerHTML = '<span style="color:var(--red);font-weight:600">⚠️ La date de retour doit être après la récupération</span>';
+      hint.innerHTML = '<span style="color:var(--red);font-weight:600"><i data-lucide="alert-triangle"></i> La date de retour doit être après la récupération</span>';
+      lucide.createIcons({ nodes: hint.querySelectorAll('[data-lucide]') });
       return;
     }
 
@@ -933,14 +937,14 @@ const Historique = (() => {
       const livraison = km > 0 ? ` + ${(km * kmt).toFixed(2)} € liv.` : '';
       const statut = d.statut || 'brouillon';
       const relBtn = needsRelance(d)
-        ? `<button class="btn btn-gold btn-sm" style="padding:3px 10px;font-size:.72rem" onclick="event.stopPropagation();Historique.relancer(${d.id})">🔔 Relancer</button>`
+        ? `<button class="btn btn-gold btn-sm" style="padding:3px 10px;font-size:.72rem" onclick="event.stopPropagation();Historique.relancer(${d.id})"><i data-lucide="bell"></i> Relancer</button>`
         : '';
 
       return `<div class="dvc" onclick="Historique.openDetail(${d.id})">
         <div class="flex jb items-c">
           <div>
             <div class="dvc-num" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-              ${isF ? '🧾' : '📋'}
+              ${isF ? '<i data-lucide="file-text"></i>' : '<i data-lucide="clipboard"></i>'}
               ${isF ? '<span class="badge bg-green" style="margin:0">Facture</span>' : ''}
               ${statutBadge(statut)}
               ${d.num || '—'}
@@ -968,9 +972,10 @@ const Historique = (() => {
         </div>
       </div>`;
     }).join('');
+    lucide.createIcons({ nodes: listEl.querySelectorAll('[data-lucide]') });
   }
 
-  // ── Filtre texte ──────────────────────────────────────────
+  // ── Filtre texte ────────────��───────────────────────���─────
   function filter() {
     const el = document.getElementById('hist-search');
     _search  = el ? el.value.toLowerCase().trim() : '';
@@ -1020,7 +1025,10 @@ const Historique = (() => {
     if (idEl)   idEl.value   = id;
     if (dateEl) dateEl.value = today();
     if (notEl)  notEl.value  = '';
-    if (titleEl) titleEl.textContent = `🔔 Relancer — ${dv.num || ''} (${dv.client || ''})`;
+    if (titleEl) {
+      titleEl.innerHTML = `<i data-lucide="bell"></i> Relancer — ${dv.num || ''} (${dv.client || ''})`;
+      lucide.createIcons({ nodes: titleEl.querySelectorAll('[data-lucide]') });
+    }
     App.openModal('m-relance');
   }
 
@@ -1062,7 +1070,10 @@ const Historique = (() => {
     const titleEl = document.getElementById('m-dv-title');
 
     if (titleEl) titleEl.textContent = (isF ? 'Facture ' : 'Devis ') + (dv.num || '');
-    if (bdEl)    bdEl.innerHTML = _detailHtml(dv);
+    if (bdEl) {
+      bdEl.innerHTML = _detailHtml(dv);
+      lucide.createIcons({ nodes: bdEl.querySelectorAll('[data-lucide]') });
+    }
     App.openModal('m-dv');
   }
 
@@ -1106,8 +1117,8 @@ const Historique = (() => {
         </tr></thead>
         <tbody>
           ${(dv.lines || []).map(l => {
-            const lnBadge = l.dur === 'epicerie' ? ' <span style="font-size:.6rem;background:#FEF3C7;color:#D97706;padding:1px 5px;border-radius:99px">🛒</span>'
-                          : l.dur === 'service'  ? ' <span style="font-size:.6rem;background:#EFF6FF;color:#1D4ED8;padding:1px 5px;border-radius:99px">🔧</span>'
+            const lnBadge = l.dur === 'epicerie' ? ' <span style="font-size:.6rem;background:#FEF3C7;color:#D97706;padding:1px 5px;border-radius:99px"><i data-lucide="shopping-cart"></i></span>'
+                          : l.dur === 'service'  ? ' <span style="font-size:.6rem;background:#EFF6FF;color:#1D4ED8;padding:1px 5px;border-radius:99px"><i data-lucide="wrench"></i></span>'
                           : '';
             return `<tr>
             <td style="padding:7px 10px;border-bottom:1px solid #F3F4F6">${l.name}${lnBadge}</td>
@@ -1124,7 +1135,7 @@ const Historique = (() => {
           <div style="color:var(--grey);margin-top:5px">Sous-total : ${sousTotal.toFixed(2)} €</div>
           ${dvRemises.map(r => {
             const label = r.type === 'pourcentage' ? `(-${r.valeur}%)` : `(-${r.valeur.toFixed(2)} €)`;
-            return `<div style="color:var(--red)">🏷️ ${r.nom} ${label} : - ${(r.montant_deduit || 0).toFixed(2)} €</div>`;
+            return `<div style="color:var(--red)"><i data-lucide="tag"></i> ${r.nom} ${label} : - ${(r.montant_deduit || 0).toFixed(2)} €</div>`;
           }).join('')}
         ` : ''}
         ${(db.params.tva || 0) > 0 ? `
@@ -1138,13 +1149,13 @@ const Historique = (() => {
       </div>
       ${dv.notes ? `<div style="margin-top:10px;background:#F9FAFB;padding:10px;border-radius:8px;font-size:.78rem"><strong>Notes :</strong> ${dv.notes}</div>` : ''}
       <div class="btn-row mt-4 no-print">
-        <button class="btn btn-gold btn-sm" onclick="Print.dv(db.devis.find(d=>d.id===${dv.id}))">🖨️ PDF</button>
-        <button class="btn btn-gold btn-sm" onclick="Print.downloadPdf(db.devis.find(d=>d.id===${dv.id}))">⬇️ Télécharger</button>
-        <button class="btn btn-purple btn-sm" onclick="Historique.emailAndSetSent(${dv.id})">📧 Email</button>
-        ${statut === 'accepté' ? `<button class="btn btn-primary btn-sm" onclick="App.closeModal('m-dv');Paiements.openModal(${dv.id})">💳 Paiement</button>` : ''}
-        ${needsRelance(dv) ? `<button class="btn btn-gold btn-sm" onclick="App.closeModal('m-dv');Historique.relancer(${dv.id})">🔔 Relancer</button>` : ''}
-        <button class="btn btn-ghost btn-sm" onclick="Devis.edit(${dv.id});App.closeModal('m-dv')">✏️ Modifier</button>
-        <button class="btn btn-danger btn-sm" onclick="Historique.del(${dv.id})">🗑️ Supprimer</button>
+        <button class="btn btn-gold btn-sm" onclick="Print.dv(db.devis.find(d=>d.id===${dv.id}))"><i data-lucide="printer"></i> PDF</button>
+        <button class="btn btn-gold btn-sm" onclick="Print.downloadPdf(db.devis.find(d=>d.id===${dv.id}))"><i data-lucide="download"></i> Télécharger</button>
+        <button class="btn btn-purple btn-sm" onclick="Historique.emailAndSetSent(${dv.id})"><i data-lucide="mail"></i> Email</button>
+        ${statut === 'accepté' ? `<button class="btn btn-primary btn-sm" onclick="App.closeModal('m-dv');Paiements.openModal(${dv.id})"><i data-lucide="credit-card"></i> Paiement</button>` : ''}
+        ${needsRelance(dv) ? `<button class="btn btn-gold btn-sm" onclick="App.closeModal('m-dv');Historique.relancer(${dv.id})"><i data-lucide="bell"></i> Relancer</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="Devis.edit(${dv.id});App.closeModal('m-dv')"><i data-lucide="pencil"></i> Modifier</button>
+        <button class="btn btn-danger btn-sm" onclick="Historique.del(${dv.id})"><i data-lucide="trash-2"></i> Supprimer</button>
       </div>
     </div>`;
   }

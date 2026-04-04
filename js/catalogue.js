@@ -56,17 +56,18 @@ const Catalogue = (() => {
         <td><span class="badge bg-grey">${i.cat || 'Autre'}</span></td>
         <td>${prixDisp}</td>
         <td>${i.owned
-          ? '<span class="badge bg-green">✅ Possédé</span>'
-          : '<span class="badge bg-gold">🔄 À acquérir</span>'}</td>
+          ? '<span class="badge bg-green"><i data-lucide="check-circle"></i> Possédé</span>'
+          : '<span class="badge bg-gold"><i data-lucide="refresh-cw"></i> À acquérir</span>'}</td>
         <td class="text-sm truncate" style="max-width:160px">${i.notes || ''}</td>
         <td>
           <div class="flex gap-2">
-            <button class="btn btn-ghost btn-xs btn-icon" onclick="Catalogue.openModal(${i.id})" title="Modifier">✏️</button>
-            <button class="btn btn-danger btn-xs btn-icon" onclick="Catalogue.del(${i.id})" title="Supprimer">🗑️</button>
+            <button class="btn btn-ghost btn-xs btn-icon" onclick="Catalogue.openModal(${i.id})" title="Modifier"><i data-lucide="pencil"></i></button>
+            <button class="btn btn-danger btn-xs btn-icon" onclick="Catalogue.del(${i.id})" title="Supprimer"><i data-lucide="trash-2"></i></button>
           </div>
         </td>
       </tr>`;
     }).join('');
+    lucide.createIcons({ nodes: tbody.querySelectorAll('[data-lucide]') });
   }
 
   // ── Filtre ────────────────────────────────────────────────

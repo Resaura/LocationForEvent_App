@@ -101,10 +101,11 @@ const Clients = (() => {
       let topName = '—', topNb = 0;
       all.forEach(c => { if (c.nbTot > topNb) { topNb = c.nbTot; topName = c.nom; } });
       kpiEl.innerHTML = `
-        <div class="stat"><div class="stat-ic ic-blue">👥</div><div><div class="stat-lbl">Total clients</div><div class="stat-val">${db.clients.length}</div></div></div>
-        <div class="stat"><div class="stat-ic ic-green">💰</div><div><div class="stat-lbl">CA total${labelPrix() ? ' ' + labelPrix() : ''}</div><div class="stat-val">${prixAffiche(totalCa).toFixed(2)} €</div></div></div>
-        <div class="stat"><div class="stat-ic ic-purple">🏆</div><div><div class="stat-lbl">Plus fidèle</div><div class="stat-val" style="font-size:.78rem">${topName} (${topNb}×)</div></div></div>
+        <div class="stat"><div class="stat-ic ic-blue"><i data-lucide="users"></i></div><div><div class="stat-lbl">Total clients</div><div class="stat-val">${db.clients.length}</div></div></div>
+        <div class="stat"><div class="stat-ic ic-green"><i data-lucide="dollar-sign"></i></div><div><div class="stat-lbl">CA total${labelPrix() ? ' ' + labelPrix() : ''}</div><div class="stat-val">${prixAffiche(totalCa).toFixed(2)} €</div></div></div>
+        <div class="stat"><div class="stat-ic ic-purple"><i data-lucide="trophy"></i></div><div><div class="stat-lbl">Plus fidèle</div><div class="stat-val" style="font-size:.78rem">${topName} (${topNb}×)</div></div></div>
       `;
+      lucide.createIcons({ nodes: kpiEl.querySelectorAll('[data-lucide]') });
     }
 
     // ─ Chips badge ─
@@ -152,7 +153,7 @@ const Clients = (() => {
             <div class="cli-name">${c.nom} ${badge}</div>
             <div class="cli-info">
               ${c.tel ? `📞 ${c.tel}` : ''}
-              ${c.email ? ` · 📧 ${c.email}` : ''}
+              ${c.email ? ` · ${c.email}` : ''}
             </div>
             <div style="font-size:.72rem;color:var(--grey);margin-top:3px">
               ${c.nbTot} location${c.nbTot > 1 ? 's' : ''} · CA : ${prixAffiche(c.ca).toFixed(2)} €
@@ -161,13 +162,14 @@ const Clients = (() => {
           </div>
           <div style="text-align:right;flex-shrink:0">
             <div class="btn-row" style="justify-content:flex-end">
-              <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();Clients.newDevisFor(${c.id})">✏️ Devis</button>
-              <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();Clients.del(${c.id})">🗑️</button>
+              <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();Clients.newDevisFor(${c.id})"><i data-lucide="pencil"></i> Devis</button>
+              <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();Clients.del(${c.id})"><i data-lucide="trash-2"></i></button>
             </div>
           </div>
         </div>
       </div>`;
     }).join('');
+    lucide.createIcons({ nodes: listEl.querySelectorAll('[data-lucide]') });
   }
 
   // ── Fiche détaillée (modale) ──────────────────────────────
@@ -204,10 +206,10 @@ const Clients = (() => {
         ${badge}
       </div>
       <div class="g2 mb-3" style="gap:6px;font-size:.84rem">
-        ${cli.tel   ? `<div>📞 <strong>${cli.tel}</strong></div>` : ''}
-        ${cli.email ? `<div>📧 <strong>${cli.email}</strong></div>` : ''}
-        ${cli.adr   ? `<div style="grid-column:span 2">📍 ${cli.adr}</div>` : ''}
-        ${cli.notes ? `<div style="grid-column:span 2;color:var(--grey)">📝 ${cli.notes}</div>` : ''}
+        ${cli.tel   ? `<div><i data-lucide="phone"></i> <strong>${cli.tel}</strong></div>` : ''}
+        ${cli.email ? `<div><i data-lucide="mail"></i> <strong>${cli.email}</strong></div>` : ''}
+        ${cli.adr   ? `<div style="grid-column:span 2"><i data-lucide="map-pin"></i> ${cli.adr}</div>` : ''}
+        ${cli.notes ? `<div style="grid-column:span 2;color:var(--grey)"><i data-lucide="file-text"></i> ${cli.notes}</div>` : ''}
       </div>
 
       <div class="sep"></div>
@@ -237,11 +239,11 @@ const Clients = (() => {
 
       <div class="sep"></div>
       <div class="btn-row mt-3 no-print">
-        <button class="btn btn-ghost btn-sm" onclick="App.closeModal('m-cli-detail');Clients.openModal(${cli.id})">✏️ Modifier</button>
-        <button class="btn btn-primary btn-sm" onclick="App.closeModal('m-cli-detail');Clients.newDevisFor(${cli.id})">➕ Nouveau devis</button>
+        <button class="btn btn-ghost btn-sm" onclick="App.closeModal('m-cli-detail');Clients.openModal(${cli.id})"><i data-lucide="pencil"></i> Modifier</button>
+        <button class="btn btn-primary btn-sm" onclick="App.closeModal('m-cli-detail');Clients.newDevisFor(${cli.id})"><i data-lucide="plus"></i> Nouveau devis</button>
       </div>
     `;
-
+    lucide.createIcons({ nodes: bdEl.querySelectorAll('[data-lucide]') });
     App.openModal('m-cli-detail');
   }
 

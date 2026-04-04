@@ -92,12 +92,15 @@ const Stats = (() => {
     const lp = typeof labelPrix === 'function' ? labelPrix() : '';
     const sfx = lp ? ` ${lp}` : '';
     const kpiEl = document.getElementById('stats-kpi');
-    if (kpiEl) kpiEl.innerHTML = `
-      <div class="stat"><div class="stat-ic ic-green">💰</div><div><div class="stat-lbl">CA total${sfx}</div><div class="stat-val">${prixAffiche(caTotal).toFixed(2)} €</div></div></div>
-      <div class="stat"><div class="stat-ic ic-blue">📦</div><div><div class="stat-lbl">Matériels rentabilisés</div><div class="stat-val">${nbRent} / ${db.cat.length}</div></div></div>
-      <div class="stat"><div class="stat-ic ic-gold">📋</div><div><div class="stat-lbl">Devis acceptés</div><div class="stat-val">${nbAccepted}</div></div></div>
-      <div class="stat"><div class="stat-ic ic-purple">🏆</div><div><div class="stat-lbl">Le plus loué</div><div class="stat-val" style="font-size:.78rem">${topName} (${topCount}×)</div></div></div>
+    if (kpiEl) {
+      kpiEl.innerHTML = `
+      <div class="stat"><div class="stat-ic ic-green"><i data-lucide="dollar-sign"></i></div><div><div class="stat-lbl">CA total${sfx}</div><div class="stat-val">${prixAffiche(caTotal).toFixed(2)} €</div></div></div>
+      <div class="stat"><div class="stat-ic ic-blue"><i data-lucide="package"></i></div><div><div class="stat-lbl">Matériels rentabilisés</div><div class="stat-val">${nbRent} / ${db.cat.length}</div></div></div>
+      <div class="stat"><div class="stat-ic ic-gold"><i data-lucide="file-text"></i></div><div><div class="stat-lbl">Devis acceptés</div><div class="stat-val">${nbAccepted}</div></div></div>
+      <div class="stat"><div class="stat-ic ic-purple"><i data-lucide="trophy"></i></div><div><div class="stat-lbl">Le plus loué</div><div class="stat-val" style="font-size:.78rem">${topName} (${topCount}×)</div></div></div>
     `;
+      lucide.createIcons({ nodes: kpiEl.querySelectorAll('[data-lucide]') });
+    }
 
     // ─ Chips catégorie ─
     const chipsEl = document.getElementById('stats-chips');

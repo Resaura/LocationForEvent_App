@@ -125,8 +125,8 @@ ${(dv.client || dv.recup) ? `<div class="client-box">
   </tr></thead>
   <tbody>
     ${(dv.lines || []).map(l => {
-      const pBadge = l.dur === 'epicerie' ? ' <span style="font-size:9px;background:#FEF3C7;color:#D97706;padding:1px 5px;border-radius:99px">🛒</span>'
-                   : l.dur === 'service'  ? ' <span style="font-size:9px;background:#EFF6FF;color:#1D4ED8;padding:1px 5px;border-radius:99px">🔧</span>'
+      const pBadge = l.dur === 'epicerie' ? ' <span style="font-size:9px;background:#FEF3C7;color:#D97706;padding:1px 5px;border-radius:99px">Épicerie</span>'
+                   : l.dur === 'service'  ? ' <span style="font-size:9px;background:#EFF6FF;color:#1D4ED8;padding:1px 5px;border-radius:99px">Service</span>'
                    : '';
       return `<tr>
       <td>${l.name}${pBadge}</td>

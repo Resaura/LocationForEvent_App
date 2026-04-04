@@ -120,9 +120,9 @@
         <div class="topbar-title" id="top-title">Tableau de bord</div>
       </div>
       <div class="topbar-right no-print">
-        <button class="btn btn-ghost btn-sm" onclick="App.exportData()">⬇️ Export</button>
+        <button class="btn btn-ghost btn-sm" onclick="App.exportData()"><i data-lucide="download"></i> Export</button>
         <label class="btn btn-ghost btn-sm" style="cursor:pointer">
-          ⬆️ Import
+          <i data-lucide="upload"></i> Import
           <input type="file" accept=".json" onchange="App.importData(event)" style="display:none">
         </label>
       </div>
@@ -135,7 +135,7 @@
       <div class="page" id="page-calendrier">
         <div class="card">
           <div class="card-hd">
-            <div class="card-title">📅 Calendrier des événements</div>
+            <div class="card-title"><i data-lucide="calendar"></i> Calendrier des événements</div>
           </div>
           <div class="card-bd" id="cal-wrap"></div>
         </div>
@@ -147,14 +147,14 @@
 
         <div class="card mb-4">
           <div class="card-hd">
-            <div class="card-title">📊 CA mensuel (devis acceptés)</div>
+            <div class="card-title"><i data-lucide="bar-chart-2"></i> CA mensuel (devis acceptés)</div>
           </div>
           <div class="card-bd" id="stats-chart"></div>
         </div>
 
         <div class="card">
           <div class="card-hd">
-            <div class="card-title">📦 Rentabilité matériel</div>
+            <div class="card-title"><i data-lucide="package"></i> Rentabilité matériel</div>
           </div>
           <div class="card-bd">
             <div class="chips mb-2" id="stats-chips"></div>
@@ -188,10 +188,10 @@
       <div class="page active" id="page-dashboard">
         <!-- Raccourcis rapides -->
         <div class="dash-shortcuts mb-4" id="dash-shortcuts">
-          <button class="btn btn-primary btn-sm" onclick="App.go('nouveau-devis')">✏️ Nouveau devis</button>
-          <button class="btn btn-ghost btn-sm" onclick="typeof Catalogue!=='undefined'&&Catalogue.openModal()">📦 Ajouter matériel</button>
-          <button class="btn btn-ghost btn-sm" onclick="typeof Clients!=='undefined'&&Clients.openModal()">👥 Nouveau client</button>
-          <button class="btn btn-ghost btn-sm" onclick="App.go('calendrier')">📅 Voir calendrier</button>
+          <button class="btn btn-primary btn-sm" onclick="App.go('nouveau-devis')"><i data-lucide="pencil"></i> Nouveau devis</button>
+          <button class="btn btn-ghost btn-sm" onclick="typeof Catalogue!=='undefined'&&Catalogue.openModal()"><i data-lucide="package"></i> Ajouter matériel</button>
+          <button class="btn btn-ghost btn-sm" onclick="typeof Clients!=='undefined'&&Clients.openModal()"><i data-lucide="users"></i> Nouveau client</button>
+          <button class="btn btn-ghost btn-sm" onclick="App.go('calendrier')"><i data-lucide="calendar"></i> Voir calendrier</button>
         </div>
         <!-- KPIs Rangée 1 — Vue générale -->
         <div class="g4 mb-3" id="dash-stats-1"></div>
@@ -200,7 +200,7 @@
         <!-- Graphique CA mensuel -->
         <div class="card mb-4">
           <div class="card-hd">
-            <div class="card-title">📊 CA mensuel — 12 derniers mois</div>
+            <div class="card-title"><i data-lucide="bar-chart-2"></i> CA mensuel — 12 derniers mois</div>
             <button class="btn btn-ghost btn-sm" data-page="stats">Voir détail →</button>
           </div>
           <div class="card-bd no-top" id="dash-chart"></div>
@@ -209,7 +209,7 @@
         <div class="g2 mb-4">
           <div class="card">
             <div class="card-hd">
-              <div class="card-title">⚡ Actions requises</div>
+              <div class="card-title"><i data-lucide="zap"></i> Actions requises</div>
             </div>
             <div class="card-bd no-top" id="dash-actions"></div>
           </div>
@@ -226,7 +226,7 @@
       <div class="page" id="page-catalogue">
         <div class="card">
           <div class="card-hd">
-            <div class="card-title">📦 Catalogue matériel</div>
+            <div class="card-title"><i data-lucide="package"></i> Catalogue matériel</div>
             <button class="btn btn-primary btn-sm" onclick="Catalogue.openModal()">+ Nouveau</button>
           </div>
           <div class="card-bd">
@@ -234,7 +234,7 @@
               <div class="search-wrap" style="flex:1;min-width:180px">
                 <input type="text" id="cat-search" placeholder="Rechercher…" oninput="Catalogue.filter()">
               </div>
-              <button class="btn btn-ghost btn-sm" onclick="Catalogue.exportCsv()">📥 CSV</button>
+              <button class="btn btn-ghost btn-sm" onclick="Catalogue.exportCsv()"><i data-lucide="download"></i> CSV</button>
             </div>
             <div class="chips" id="cat-chips"></div>
             <div class="tbl-wrap">
@@ -253,7 +253,7 @@
               </table>
             </div>
             <div class="empty" id="cat-empty" style="display:none">
-              <div class="ei">📦</div>
+              <div class="ei"><i data-lucide="package"></i></div>
               <h3>Catalogue vide</h3>
               <p>Ajoutez votre premier matériel</p>
             </div>
@@ -266,7 +266,7 @@
         <div class="g2">
           <div>
             <div class="card mb-3">
-              <div class="card-hd"><div class="card-title">⚡ Calculateur de prix</div></div>
+              <div class="card-hd"><div class="card-title"><i data-lucide="zap"></i> Calculateur de prix</div></div>
               <div class="card-bd">
                 <div class="fg">
                   <label class="fl">Matériel</label>
@@ -290,8 +290,8 @@
                     <div class="sim-grid" id="sim-grid"></div>
                   </div>
                   <div class="flex gap-2 mt-3" style="flex-wrap:wrap">
-                    <button class="btn btn-primary btn-sm" onclick="Simulateur.addToDevis()">✏️ Créer un devis</button>
-                    <button class="btn btn-ghost btn-sm" onclick="Simulateur.reset()">✕ Effacer</button>
+                    <button class="btn btn-primary btn-sm" onclick="Simulateur.addToDevis()"><i data-lucide="pencil"></i> Créer un devis</button>
+                    <button class="btn btn-ghost btn-sm" onclick="Simulateur.reset()"><i data-lucide="x"></i> Effacer</button>
                   </div>
                 </div>
               </div>
@@ -299,7 +299,7 @@
           </div>
           <div class="card">
             <div class="card-hd">
-              <div class="card-title">📐 Règles d'amortissement</div>
+              <div class="card-title"><i data-lucide="percent"></i> Règles d'amortissement</div>
             </div>
             <div class="card-bd no-top" id="sim-amort-preview"></div>
           </div>
@@ -313,7 +313,7 @@
           <div>
             <div class="card mb-3">
               <div class="card-hd">
-                <div class="card-title" id="nd-title">✏️ Nouveau devis</div>
+                <div class="card-title" id="nd-title"><i data-lucide="pencil"></i> Nouveau devis</div>
                 <span class="badge bg-blue" id="nd-num-badge" style="display:none"></span>
               </div>
               <div class="card-bd">
@@ -374,7 +374,7 @@
           <!-- Colonne droite : ajout matériel + récap -->
           <div>
             <div class="card mb-3">
-              <div class="card-hd"><div class="card-title">➕ Ajouter un matériel</div></div>
+              <div class="card-hd"><div class="card-title"><i data-lucide="plus"></i> Ajouter un matériel</div></div>
               <div class="card-bd">
                 <div class="fg">
                   <label class="fl">Rechercher</label>
@@ -414,18 +414,18 @@
             </div>
 
             <div class="card mb-3">
-              <div class="card-hd"><div class="card-title">🔧 Ajouter un service</div></div>
+              <div class="card-hd"><div class="card-title"><i data-lucide="wrench"></i> Ajouter un service</div></div>
               <div class="card-bd" id="nd-svc-picker"></div>
             </div>
 
             <div class="card mb-3">
-              <div class="card-hd"><div class="card-title">🛒 Ajouter un produit épicerie</div></div>
+              <div class="card-hd"><div class="card-title"><i data-lucide="shopping-cart"></i> Ajouter un produit épicerie</div></div>
               <div class="card-bd" id="nd-epi-picker"></div>
             </div>
 
             <div class="card">
               <div class="card-hd">
-                <div class="card-title">📋 Récapitulatif</div>
+                <div class="card-title"><i data-lucide="clipboard"></i> Récapitulatif</div>
               </div>
               <div class="card-bd">
                 <div id="nd-lines-wrap" style="display:none">
@@ -436,7 +436,7 @@
                     <select id="nd-remise-sel" style="flex:1;font-size:.8rem">
                       <option value="">— Remise —</option>
                     </select>
-                    <button class="btn btn-ghost btn-sm" onclick="Devis.addRemise()" style="white-space:nowrap">🏷️ Appliquer</button>
+                    <button class="btn btn-ghost btn-sm" onclick="Devis.addRemise()" style="white-space:nowrap"><i data-lucide="tag"></i> Appliquer</button>
                   </div>
                   <div class="dv-total-row">
                     <span>Total HT</span>
@@ -453,16 +453,16 @@
                   </div>
                 </div>
                 <div class="empty" id="nd-empty">
-                  <div class="ei">🛒</div>
+                  <div class="ei"><i data-lucide="shopping-cart"></i></div>
                   <p>Aucune ligne pour l'instant</p>
                 </div>
                 <div class="sep"></div>
                 <div class="btn-row">
-                  <button class="btn btn-primary" onclick="Devis.save()">💾 Enregistrer devis</button>
-                  <button class="btn btn-gold btn-sm" onclick="Devis.saveAsFacture()">🧾 Facturer</button>
-                  <button class="btn btn-ghost btn-sm" onclick="Devis.print()">🖨️ Aperçu</button>
-                  <button class="btn btn-ghost btn-sm" onclick="Devis.download()">⬇️ PDF</button>
-                  <button class="btn btn-ghost btn-sm" onclick="Devis.reset()">✕ Vider</button>
+                  <button class="btn btn-primary" onclick="Devis.save()"><i data-lucide="save"></i> Enregistrer devis</button>
+                  <button class="btn btn-gold btn-sm" onclick="Devis.saveAsFacture()"><i data-lucide="file-text"></i> Facturer</button>
+                  <button class="btn btn-ghost btn-sm" onclick="Devis.print()"><i data-lucide="printer"></i> Aperçu</button>
+                  <button class="btn btn-ghost btn-sm" onclick="Devis.download()"><i data-lucide="download"></i> PDF</button>
+                  <button class="btn btn-ghost btn-sm" onclick="Devis.reset()"><i data-lucide="x"></i> Vider</button>
                 </div>
               </div>
             </div>
@@ -474,13 +474,13 @@
       <div class="page" id="page-services">
         <div class="card">
           <div class="card-hd">
-            <div class="card-title">🔧 Prestations &amp; Services</div>
+            <div class="card-title"><i data-lucide="wrench"></i> Prestations &amp; Services</div>
             <button class="btn btn-primary btn-sm" onclick="Services.openModal()">+ Nouveau service</button>
           </div>
           <div class="card-bd">
             <div id="svc-list"></div>
             <div class="empty" id="svc-empty" style="display:none">
-              <div class="ei">🔧</div>
+              <div class="ei"><i data-lucide="wrench"></i></div>
               <h3>Aucun service</h3>
               <p>Créez vos premières prestations facturables</p>
             </div>
@@ -492,7 +492,7 @@
       <div class="page" id="page-epicerie">
         <div class="card">
           <div class="card-hd">
-            <div class="card-title">🛒 Épicerie &amp; Consommables</div>
+            <div class="card-title"><i data-lucide="shopping-cart"></i> Épicerie &amp; Consommables</div>
             <button class="btn btn-primary btn-sm" onclick="Epicerie.openModal()">+ Ajouter un produit</button>
           </div>
           <div class="card-bd">
@@ -504,7 +504,7 @@
             <div class="chips" id="epi-chips"></div>
             <div id="epi-list"></div>
             <div class="empty" id="epi-empty" style="display:none">
-              <div class="ei">🛒</div>
+              <div class="ei"><i data-lucide="shopping-cart"></i></div>
               <h3>Aucun produit</h3>
               <p>Ajoutez vos premiers produits épicerie</p>
             </div>
@@ -516,8 +516,8 @@
       <div class="page" id="page-historique">
         <div class="card">
           <div class="card-hd">
-            <div class="card-title">📋 Devis &amp; Factures</div>
-            <button class="btn btn-ghost btn-sm" onclick="Historique.exportCsv()">📥 CSV</button>
+            <div class="card-title"><i data-lucide="file-text"></i> Devis &amp; Factures</div>
+            <button class="btn btn-ghost btn-sm" onclick="Historique.exportCsv()"><i data-lucide="download"></i> CSV</button>
           </div>
           <div class="card-bd">
             <div class="flex gap-2 mb-3" style="flex-wrap:wrap">
@@ -528,7 +528,7 @@
             <div class="chips" id="hist-chips"></div>
             <div id="hist-list"></div>
             <div class="empty" id="hist-empty" style="display:none">
-              <div class="ei">📋</div>
+              <div class="ei"><i data-lucide="file-text"></i></div>
               <h3>Aucun devis</h3>
               <p>Créez votre premier devis depuis la page "Nouveau devis"</p>
             </div>
@@ -543,7 +543,7 @@
 
         <div class="card">
           <div class="card-hd">
-            <div class="card-title">👥 Fichier clients</div>
+            <div class="card-title"><i data-lucide="users"></i> Fichier clients</div>
             <button class="btn btn-primary btn-sm" onclick="Clients.openModal()">+ Nouveau</button>
           </div>
           <div class="card-bd">
@@ -559,7 +559,7 @@
 
             <div id="cli-list"></div>
             <div class="empty" id="cli-empty" style="display:none">
-              <div class="ei">👥</div>
+              <div class="ei"><i data-lucide="users"></i></div>
               <h3>Aucun client</h3>
               <p>Les clients sont créés automatiquement à chaque devis</p>
             </div>
@@ -572,14 +572,14 @@
         <div class="g4 mb-4" id="pay-kpi"></div>
         <div class="card">
           <div class="card-hd">
-            <div class="card-title">💳 Paiements</div>
-            <button class="btn btn-gold btn-sm" onclick="Paiements.exportCsv()">📥 Export CSV</button>
+            <div class="card-title"><i data-lucide="credit-card"></i> Paiements</div>
+            <button class="btn btn-gold btn-sm" onclick="Paiements.exportCsv()"><i data-lucide="download"></i> Export CSV</button>
           </div>
           <div class="card-bd">
             <div id="pay-chips" class="chips-row mb-3"></div>
             <div id="pay-list"></div>
             <div class="empty" id="pay-empty" style="display:none">
-              <div class="ei">💳</div>
+              <div class="ei"><i data-lucide="credit-card"></i></div>
               <h3>Aucun paiement</h3>
               <p>Les paiements apparaissent quand vous gérez le suivi depuis un devis accepté</p>
             </div>
@@ -591,10 +591,10 @@
       <div class="page" id="page-amortissement">
         <div class="card">
           <div class="card-hd">
-            <div class="card-title">📐 Table d'amortissement</div>
+            <div class="card-title"><i data-lucide="percent"></i> Table d'amortissement</div>
             <div class="btn-row">
-              <button class="btn btn-primary btn-sm" onclick="Amortissement.save()">💾 Sauvegarder</button>
-              <button class="btn btn-ghost btn-sm" onclick="Amortissement.reset()">↩️ Réinitialiser</button>
+              <button class="btn btn-primary btn-sm" onclick="Amortissement.save()"><i data-lucide="save"></i> Sauvegarder</button>
+              <button class="btn btn-ghost btn-sm" onclick="Amortissement.reset()"><i data-lucide="rotate-ccw"></i> Réinitialiser</button>
             </div>
           </div>
           <div class="card-bd">
@@ -626,7 +626,7 @@
       <div class="page" id="page-categories">
         <div class="g2">
           <div class="card">
-            <div class="card-hd"><div class="card-title">🏷️ Gérer les catégories</div></div>
+            <div class="card-hd"><div class="card-title"><i data-lucide="tag"></i> Gérer les catégories</div></div>
             <div class="card-bd">
               <div class="flex gap-2 mb-3">
                 <input type="text" id="new-cat-input" placeholder="Nouvelle catégorie…" style="flex:1" onkeydown="if(event.key==='Enter')Categories.add()">
@@ -636,7 +636,7 @@
             </div>
           </div>
           <div class="card">
-            <div class="card-hd"><div class="card-title">📊 Statistiques par catégorie</div></div>
+            <div class="card-hd"><div class="card-title"><i data-lucide="bar-chart-2"></i> Statistiques par catégorie</div></div>
             <div class="card-bd no-top" id="cat-stats-bd"></div>
           </div>
         </div>
@@ -646,7 +646,7 @@
       <div class="page" id="page-parametres">
         <div class="g2">
           <div class="card">
-            <div class="card-hd"><div class="card-title">🏢 Informations société</div></div>
+            <div class="card-hd"><div class="card-title"><i data-lucide="building-2"></i> Informations société</div></div>
             <div class="card-bd">
               <div class="fg"><label class="fl">Nom société</label><input type="text" id="p-nom"></div>
               <div class="r2">
@@ -678,12 +678,12 @@
                 <label class="fl">Mentions légales / CGV</label>
                 <textarea id="p-mentions" style="min-height:80px"></textarea>
               </div>
-              <button class="btn btn-primary fw" onclick="Params.save()">💾 Sauvegarder</button>
+              <button class="btn btn-primary fw" onclick="Params.save()"><i data-lucide="save"></i> Sauvegarder</button>
             </div>
           </div>
           <div>
             <div class="card mb-3">
-              <div class="card-hd"><div class="card-title">🧾 TVA</div></div>
+              <div class="card-hd"><div class="card-title"><i data-lucide="receipt"></i> TVA</div></div>
               <div class="card-bd">
                 <div class="fg">
                   <label class="fl">Taux de TVA</label>
@@ -703,26 +703,26 @@
                 <div style="font-size:.72rem;color:var(--grey);margin-top:6px">
                   Ce paramètre change l'affichage de tous les montants dans l'app. Les prix de base restent en HT.
                 </div>
-                <button class="btn btn-primary fw mt-2" onclick="Params.save()">💾 Sauvegarder</button>
+                <button class="btn btn-primary fw mt-2" onclick="Params.save()"><i data-lucide="save"></i> Sauvegarder</button>
               </div>
             </div>
             <div class="card mb-3">
-              <div class="card-hd"><div class="card-title">💾 Données</div></div>
+              <div class="card-hd"><div class="card-title"><i data-lucide="database"></i> Données</div></div>
               <div class="card-bd">
                 <div class="text-sm mb-3" id="p-storage-info"></div>
                 <div class="btn-row">
-                  <button class="btn btn-ghost btn-sm" onclick="App.exportData()">⬇️ Exporter JSON</button>
+                  <button class="btn btn-ghost btn-sm" onclick="App.exportData()"><i data-lucide="download"></i> Exporter JSON</button>
                   <label class="btn btn-ghost btn-sm" style="cursor:pointer">
-                    ⬆️ Importer
+                    <i data-lucide="upload"></i> Importer
                     <input type="file" accept=".json" onchange="App.importData(event)" style="display:none">
                   </label>
                 </div>
                 <div class="sep"></div>
-                <button class="btn btn-danger btn-sm" onclick="App.clearAll()">🗑️ Tout réinitialiser</button>
+                <button class="btn btn-danger btn-sm" onclick="App.clearAll()"><i data-lucide="trash-2"></i> Tout réinitialiser</button>
               </div>
             </div>
             <div class="card mb-3">
-              <div class="card-hd"><div class="card-title">📅 Types d'événements</div></div>
+              <div class="card-hd"><div class="card-title"><i data-lucide="calendar"></i> Types d'événements</div></div>
               <div class="card-bd">
                 <div class="flex gap-2 mb-3">
                   <input type="text" id="p-type-input" placeholder="Nouveau type…" style="flex:1" onkeydown="if(event.key==='Enter')Params.addType()">
@@ -733,7 +733,7 @@
             </div>
             <div class="card mb-3">
               <div class="card-hd">
-                <div class="card-title">🏷️ Remises</div>
+                <div class="card-title"><i data-lucide="tag"></i> Remises</div>
                 <button class="btn btn-primary btn-sm" onclick="Remises.openModal()">+ Créer</button>
               </div>
               <div class="card-bd">
@@ -741,7 +741,7 @@
               </div>
             </div>
             <div class="card mb-3">
-              <div class="card-hd"><div class="card-title">🎨 Design des devis</div></div>
+              <div class="card-hd"><div class="card-title"><i data-lucide="palette"></i> Design des devis</div></div>
               <div class="card-bd">
                 <!-- Couleurs -->
                 <div class="r2">
@@ -762,7 +762,7 @@
                       📷 Choisir une image
                       <input type="file" accept="image/*" id="p-design-logo-input" onchange="Params.handleLogoUpload(event)" style="display:none">
                     </label>
-                    <button class="btn btn-danger btn-sm" onclick="Params.removeLogo()" id="p-design-logo-del" style="display:none">🗑️</button>
+                    <button class="btn btn-danger btn-sm" onclick="Params.removeLogo()" id="p-design-logo-del" style="display:none"><i data-lucide="trash-2"></i></button>
                   </div>
                   <div id="p-design-logo-preview" style="margin-top:6px;text-align:center"></div>
                 </div>
@@ -808,7 +808,7 @@
                     </label>
                   </div>
                 </div>
-                <button class="btn btn-primary fw mt-2" onclick="Params.saveDesign()">💾 Sauvegarder le design</button>
+                <button class="btn btn-primary fw mt-2" onclick="Params.saveDesign()"><i data-lucide="save"></i> Sauvegarder le design</button>
                 <!-- Aperçu -->
                 <div style="margin-top:14px">
                   <label class="fl">Aperçu</label>
@@ -866,7 +866,7 @@
       <div class="fg"><label class="fl">Notes</label><input type="text" id="m-mat-notes" placeholder="Capacité, marque…"></div>
       <div class="sep"></div>
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="Catalogue.save()">💾 Enregistrer</button>
+        <button class="btn btn-primary" onclick="Catalogue.save()"><i data-lucide="save"></i> Enregistrer</button>
         <button class="btn btn-ghost" onclick="App.closeModal('m-mat')">Annuler</button>
       </div>
     </div>
@@ -902,7 +902,7 @@
       <div class="fg"><label class="fl">Notes</label><textarea id="m-cli-notes"></textarea></div>
       <div class="sep"></div>
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="Clients.save()">💾 Enregistrer</button>
+        <button class="btn btn-primary" onclick="Clients.save()"><i data-lucide="save"></i> Enregistrer</button>
         <button class="btn btn-ghost" onclick="App.closeModal('m-cli')">Annuler</button>
       </div>
     </div>
@@ -946,7 +946,7 @@
       <div class="fg"><label class="fl">Description</label><input type="text" id="m-rem-desc" placeholder="Optionnel"></div>
       <div class="sep"></div>
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="Remises.save()">💾 Enregistrer</button>
+        <button class="btn btn-primary" onclick="Remises.save()"><i data-lucide="save"></i> Enregistrer</button>
         <button class="btn btn-ghost" onclick="App.closeModal('m-rem')">Annuler</button>
       </div>
     </div>
@@ -994,7 +994,7 @@
       <div id="m-svc-options"></div>
       <div class="sep"></div>
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="Services.save()">💾 Enregistrer</button>
+        <button class="btn btn-primary" onclick="Services.save()"><i data-lucide="save"></i> Enregistrer</button>
         <button class="btn btn-ghost" onclick="App.closeModal('m-svc')">Annuler</button>
       </div>
     </div>
@@ -1005,7 +1005,7 @@
 <div class="overlay" id="m-relance">
   <div class="modal">
     <div class="modal-hd">
-      <div class="modal-title" id="m-rel-title">🔔 Relancer le devis</div>
+      <div class="modal-title" id="m-rel-title"><i data-lucide="bell"></i> Relancer le devis</div>
       <button class="modal-x" onclick="App.closeModal('m-relance')">✕</button>
     </div>
     <div class="modal-bd">
@@ -1020,8 +1020,8 @@
       </div>
       <div class="sep"></div>
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="Historique.saveRelance()">💾 Enregistrer</button>
-        <button class="btn btn-gold btn-sm" onclick="Historique.sendRelanceEmail()">📧 Envoyer par email</button>
+        <button class="btn btn-primary" onclick="Historique.saveRelance()"><i data-lucide="save"></i> Enregistrer</button>
+        <button class="btn btn-gold btn-sm" onclick="Historique.sendRelanceEmail()"><i data-lucide="mail"></i> Envoyer par email</button>
         <button class="btn btn-ghost" onclick="App.closeModal('m-relance')">Annuler</button>
       </div>
     </div>
@@ -1105,7 +1105,7 @@
       </div>
       <div class="sep"></div>
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="Epicerie.save()">💾 Enregistrer</button>
+        <button class="btn btn-primary" onclick="Epicerie.save()"><i data-lucide="save"></i> Enregistrer</button>
         <button class="btn btn-ghost" onclick="App.closeModal('m-epi')">Annuler</button>
       </div>
     </div>

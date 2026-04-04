@@ -22,10 +22,11 @@ const Categories = (() => {
       <div class="flex jb items-c" style="padding:9px 0;border-bottom:1px solid var(--border)">
         <span style="font-weight:500">${c}</span>
         <div class="flex gap-2">
-          <button class="btn btn-ghost btn-xs" onclick="Categories.openRenameModal('${_esc(c)}')">✏️</button>
-          <button class="btn btn-danger btn-xs" onclick="Categories.del('${_esc(c)}')">🗑️</button>
+          <button class="btn btn-ghost btn-xs" onclick="Categories.openRenameModal('${_esc(c)}')"><i data-lucide="pencil"></i></button>
+          <button class="btn btn-danger btn-xs" onclick="Categories.del('${_esc(c)}')"><i data-lucide="trash-2"></i></button>
         </div>
       </div>`).join('');
+    lucide.createIcons({ nodes: el.querySelectorAll('[data-lucide]') });
   }
 
   function _renderStats() {

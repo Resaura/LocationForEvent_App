@@ -622,6 +622,15 @@ select {
 .btn-icon { padding: 0; width: 36px; height: 36px; border-radius: var(--r-sm); }
 .btn-row  { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
+/* ── Lucide icons in buttons & titles ─────────────────────── */
+.btn svg, .btn i[data-lucide]   { width: 14px; height: 14px; vertical-align: middle; }
+.btn-sm svg                     { width: 13px; height: 13px; }
+.btn-xs svg                     { width: 12px; height: 12px; }
+.card-title svg, .card-title i[data-lucide] { width: 16px; height: 16px; vertical-align: middle; }
+i[data-lucide] { display: inline-flex; vertical-align: middle; }
+.dash-alert-ic svg { width: 18px; height: 18px; }
+.ei svg { width: 32px; height: 32px; stroke-width: 1.5; }
+
 /* ═══════════════════════════════════════════════════════════════
    BADGES
    ═══════════════════════════════════════════════════════════════ */

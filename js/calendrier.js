@@ -260,9 +260,9 @@ const Calendrier = (() => {
   function _evtHtml(d, conflicts, compact = false) {
     const st   = d.statut || 'brouillon';
     const c    = CALS[st] || CALS.brouillon;
-    const icon = d.doctype === 'facture' ? '🧾' : '📋';
+    const icon = d.doctype === 'facture' ? '<i data-lucide="file-text"></i>' : '<i data-lucide="clipboard"></i>';
     const warn = conflicts.has(d.id)
-      ? `<span class="cal-warn" title="Conflit matériel détecté">⚠️</span>`
+      ? `<span class="cal-warn" title="Conflit matériel détecté"><i data-lucide="alert-triangle"></i></span>`
       : '';
     const click = `onclick="typeof Historique!=='undefined'&&Historique.openDetail(${d.id})"`;
 
@@ -403,6 +403,7 @@ const Calendrier = (() => {
       : _renderCols(_getDays(), conflicts);
 
     wrap.innerHTML = _renderBar() + gridHtml;
+    lucide.createIcons({ nodes: wrap.querySelectorAll('[data-lucide]') });
   }
 
   // ─── Navigation ───────────────────────────────────────────

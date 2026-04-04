@@ -90,7 +90,7 @@ const Paiements = (() => {
 
       <!-- Acompte -->
       <div style="margin-bottom:18px">
-        <div style="font-size:.88rem;font-weight:700;color:var(--navy);margin-bottom:8px">💰 Acompte</div>
+        <div style="font-size:.88rem;font-weight:700;color:var(--navy);margin-bottom:8px"><i data-lucide="dollar-sign"></i> Acompte</div>
         <div class="r2" style="margin-bottom:8px">
           <div class="fg">
             <label class="fl">Pourcentage (%)</label>
@@ -107,7 +107,7 @@ const Paiements = (() => {
           <label class="fl">Lien Stripe</label>
           <div style="display:flex;gap:6px">
             <input type="url" id="pay-acompte-lien" value="${p.acompte_lien || ''}" placeholder="https://buy.stripe.com/..." style="flex:1">
-            <button class="btn btn-ghost btn-sm" onclick="Paiements._copyLien('pay-acompte-lien')" title="Copier">📋</button>
+            <button class="btn btn-ghost btn-sm" onclick="Paiements._copyLien('pay-acompte-lien')" title="Copier"><i data-lucide="clipboard"></i></button>
           </div>
         </div>
         <div class="r2">
@@ -125,7 +125,7 @@ const Paiements = (() => {
           </div>
         </div>
         <div style="margin-top:6px">
-          <button class="btn btn-purple btn-sm" onclick="Paiements._emailLien(${devisId}, 'acompte')">📧 Envoyer par email</button>
+          <button class="btn btn-purple btn-sm" onclick="Paiements._emailLien(${devisId}, 'acompte')"><i data-lucide="mail"></i> Envoyer par email</button>
         </div>
       </div>
 
@@ -133,7 +133,7 @@ const Paiements = (() => {
 
       <!-- Solde -->
       <div style="margin-bottom:18px">
-        <div style="font-size:.88rem;font-weight:700;color:var(--navy);margin-bottom:8px">💳 Solde</div>
+        <div style="font-size:.88rem;font-weight:700;color:var(--navy);margin-bottom:8px"><i data-lucide="credit-card"></i> Solde</div>
         <div class="fg mb-2">
           <label class="fl">Montant restant</label>
           <input type="text" id="pay-solde-mt" value="${soldeMt.toFixed(2)} €" readonly
@@ -143,7 +143,7 @@ const Paiements = (() => {
           <label class="fl">Lien Stripe</label>
           <div style="display:flex;gap:6px">
             <input type="url" id="pay-solde-lien" value="${p.solde_lien || ''}" placeholder="https://buy.stripe.com/..." style="flex:1">
-            <button class="btn btn-ghost btn-sm" onclick="Paiements._copyLien('pay-solde-lien')" title="Copier">📋</button>
+            <button class="btn btn-ghost btn-sm" onclick="Paiements._copyLien('pay-solde-lien')" title="Copier"><i data-lucide="clipboard"></i></button>
           </div>
         </div>
         <div class="r2">
@@ -161,19 +161,20 @@ const Paiements = (() => {
           </div>
         </div>
         <div style="margin-top:6px">
-          <button class="btn btn-purple btn-sm" onclick="Paiements._emailLien(${devisId}, 'solde')">📧 Envoyer par email</button>
+          <button class="btn btn-purple btn-sm" onclick="Paiements._emailLien(${devisId}, 'solde')"><i data-lucide="mail"></i> Envoyer par email</button>
         </div>
       </div>
 
       <div class="sep"></div>
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="Paiements.save()">💾 Enregistrer</button>
+        <button class="btn btn-primary" onclick="Paiements.save()"><i data-lucide="save"></i> Enregistrer</button>
         <button class="btn btn-ghost" onclick="App.closeModal('m-pay')">Annuler</button>
       </div>
     `;
 
     const titleEl = document.getElementById('m-pay-title');
     if (titleEl) titleEl.textContent = 'Suivi paiement — ' + (dv.num || 'Devis');
+    lucide.createIcons({ nodes: bdEl.querySelectorAll('[data-lucide]') });
     App.openModal('m-pay');
   }
 
@@ -342,11 +343,12 @@ const Paiements = (() => {
       const nbComplet = all.filter(p => _globalStatus(p) === 'complet').length;
 
       kpiEl.innerHTML = `
-        <div class="stat"><div class="stat-ic ic-blue">💰</div><div><div class="stat-lbl">Total attendu</div><div class="stat-val">${prixAffiche(totalAttendu).toFixed(2)} €</div></div></div>
-        <div class="stat"><div class="stat-ic ic-green">✅</div><div><div class="stat-lbl">Total encaissé</div><div class="stat-val">${prixAffiche(totalRecu).toFixed(2)} €</div></div></div>
-        <div class="stat"><div class="stat-ic ic-gold">⏳</div><div><div class="stat-lbl">En attente</div><div class="stat-val">${nbAttente}</div></div></div>
-        <div class="stat"><div class="stat-ic ic-purple">🎯</div><div><div class="stat-lbl">Complets</div><div class="stat-val">${nbComplet}</div></div></div>
+        <div class="stat"><div class="stat-ic ic-blue"><i data-lucide="dollar-sign"></i></div><div><div class="stat-lbl">Total attendu</div><div class="stat-val">${prixAffiche(totalAttendu).toFixed(2)} €</div></div></div>
+        <div class="stat"><div class="stat-ic ic-green"><i data-lucide="check-circle"></i></div><div><div class="stat-lbl">Total encaissé</div><div class="stat-val">${prixAffiche(totalRecu).toFixed(2)} €</div></div></div>
+        <div class="stat"><div class="stat-ic ic-gold"><i data-lucide="clock"></i></div><div><div class="stat-lbl">En attente</div><div class="stat-val">${nbAttente}</div></div></div>
+        <div class="stat"><div class="stat-ic ic-purple"><i data-lucide="target"></i></div><div><div class="stat-lbl">Complets</div><div class="stat-val">${nbComplet}</div></div></div>
       `;
+      lucide.createIcons({ nodes: kpiEl.querySelectorAll('[data-lucide]') });
     }
 
     // ─ Chips filtre ─
@@ -376,16 +378,16 @@ const Paiements = (() => {
       const aMt = (p.total * p.acompte_pct / 100);
       const sMt = p.total - aMt;
 
-      const gsBadge = gs === 'complet' ? '<span style="font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;background:#D1FAE5;color:#059669">✅ Complet</span>'
-                    : gs === 'partiel' ? '<span style="font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;background:#FEF3C7;color:#D97706">⚡ Partiel</span>'
-                    : gs === 'annule'  ? '<span style="font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;background:#FEE2E2;color:#DC2626">❌ Annulé</span>'
-                    : '<span style="font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;background:#FEF3C7;color:#D97706">⏳ En attente</span>';
+      const gsBadge = gs === 'complet' ? '<span style="font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;background:#D1FAE5;color:#059669"><i data-lucide="check-circle"></i> Complet</span>'
+                    : gs === 'partiel' ? '<span style="font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;background:#FEF3C7;color:#D97706"><i data-lucide="zap"></i> Partiel</span>'
+                    : gs === 'annule'  ? '<span style="font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;background:#FEE2E2;color:#DC2626"><i data-lucide="x-circle"></i> Annulé</span>'
+                    : '<span style="font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;background:#FEF3C7;color:#D97706"><i data-lucide="clock"></i> En attente</span>';
 
       return `<div class="dvc" style="cursor:pointer" onclick="Paiements.openModal(${p.devis_id})">
         <div class="flex jb items-c">
           <div>
             <div class="dvc-num" style="display:flex;align-items:center;gap:6px">
-              💳 ${dv.num || '—'} ${gsBadge}
+              <i data-lucide="credit-card"></i> ${dv.num || '—'} ${gsBadge}
             </div>
             <div class="dvc-client">${dv.client || 'Sans client'} · ${fmtDate(dv.date)}</div>
             <div style="font-size:.72rem;color:var(--grey);margin-top:3px">
@@ -396,11 +398,12 @@ const Paiements = (() => {
           <div style="text-align:right">
             <div class="dvc-total">${prixAffiche(p.total || 0).toFixed(2)} €</div>
             <button class="btn btn-danger btn-sm" style="margin-top:4px;font-size:.68rem"
-              onclick="event.stopPropagation();Paiements.del(${p.id})">🗑️</button>
+              onclick="event.stopPropagation();Paiements.del(${p.id})"><i data-lucide="trash-2"></i></button>
           </div>
         </div>
       </div>`;
     }).join('');
+    lucide.createIcons({ nodes: listEl.querySelectorAll('[data-lucide]') });
   }
 
   // ── Rendu dashboard : paiements en attente ────────────────
@@ -426,14 +429,15 @@ const Paiements = (() => {
       return `<div class="dvc" onclick="Paiements.openModal(${p.devis_id})" style="cursor:pointer">
         <div class="flex jb items-c">
           <div>
-            <div class="dvc-num">💳 ${dv.num || '—'} · ${dv.client || 'Sans client'}</div>
+            <div class="dvc-num"><i data-lucide="credit-card"></i> ${dv.num || '—'} · ${dv.client || 'Sans client'}</div>
             <div class="dvc-client">${prixAffiche(recu).toFixed(2)} € reçu / ${prixAffiche(p.total || 0).toFixed(2)} € attendu</div>
           </div>
           <button class="btn btn-primary btn-sm" style="font-size:.72rem;padding:3px 10px"
-            onclick="event.stopPropagation();Paiements.openModal(${p.devis_id})">💳 Gérer</button>
+            onclick="event.stopPropagation();Paiements.openModal(${p.devis_id})"><i data-lucide="credit-card"></i> Gérer</button>
         </div>
       </div>`;
     }).join('');
+    lucide.createIcons({ nodes: el.querySelectorAll('[data-lucide]') });
   }
 
   return {

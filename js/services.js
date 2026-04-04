@@ -113,17 +113,18 @@ const Services = (() => {
       return `<div class="card mb-3">
         <div class="card-hd">
           <div>
-            <div class="card-title" style="font-size:.88rem">🔧 ${s.nom}</div>
+            <div class="card-title" style="font-size:.88rem"><i data-lucide="wrench"></i> ${s.nom}</div>
             ${s.description ? `<div style="font-size:.75rem;color:var(--grey);margin-top:2px">${s.description}</div>` : ''}
           </div>
           <div class="btn-row">
-            <button class="btn btn-ghost btn-sm" onclick="Services.openModal(${s.id})">✏️ Modifier</button>
-            <button class="btn btn-danger btn-sm" onclick="Services.del(${s.id})">🗑️</button>
+            <button class="btn btn-ghost btn-sm" onclick="Services.openModal(${s.id})"><i data-lucide="pencil"></i> Modifier</button>
+            <button class="btn btn-danger btn-sm" onclick="Services.del(${s.id})"><i data-lucide="trash-2"></i></button>
           </div>
         </div>
         ${opts.length ? `<div class="card-bd no-top" style="padding-top:4px">${optsHtml}</div>` : ''}
       </div>`;
     }).join('');
+    lucide.createIcons({ nodes: listEl.querySelectorAll('[data-lucide]') });
   }
 
   // ── Modale création / édition ─────────────────────────────
@@ -194,7 +195,8 @@ const Services = (() => {
         Oblig.
       </label>
       <button onclick="Services.removeOption(${key})"
-              style="padding:5px 9px;border:1px solid var(--border);border-radius:var(--r-sm);background:#fff;cursor:pointer;font-size:.78rem;color:var(--red)">✕</button>`;
+              style="padding:5px 9px;border:1px solid var(--border);border-radius:var(--r-sm);background:#fff;cursor:pointer;font-size:.78rem;color:var(--red)"><i data-lucide="x"></i></button>`;
+    lucide.createIcons({ nodes: row.querySelectorAll('[data-lucide]') });
 
     const container = document.getElementById('m-svc-options');
     if (container) container.appendChild(row);
