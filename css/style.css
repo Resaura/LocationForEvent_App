@@ -367,11 +367,12 @@ body {
   letter-spacing: .5px;
 }
 .stat-val {
-  font-family: var(--font-display);
+  font-family: var(--font);
   font-size: 32px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text);
   line-height: 1.1;
+  font-variant-numeric: tabular-nums;
 }
 .stat-sub {
   font-size: .68rem;

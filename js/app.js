@@ -236,7 +236,7 @@ const App = {
           const h = Math.max(6, (val / maxCA * 80)) + '%';
           barStyle = `height:${h};background:${isCurrent ? 'var(--blue)' : 'var(--navy2)'}`;
         } else {
-          barStyle = 'height:4px;background:var(--border2)';
+          barStyle = 'height:6px;background:var(--border2);border-radius:3px;width:100%';
         }
         return `<div class="dash-bar-col">
           <div class="dash-bar" style="${barStyle}">
@@ -910,6 +910,11 @@ function fmtDt(s) {
   } catch { return s; }
 }
 
+// Arrondi supérieur au 0,50 € le plus proche
+function arrondi(val) {
+  return Math.ceil(val * 2) / 2;
+}
+
 // Calcul du prix selon la table d'amortissement
 // Retourne { jour: number, disp: number, caut: number } ou null
 function calc(pa, dur, qty = 1) {
@@ -926,8 +931,8 @@ function calc(pa, dur, qty = 1) {
   }
   if (!coeff) return null;
 
-  const prixUnit = prixJour * coeff;
-  const total    = prixUnit * qty;
+  const prixUnit = arrondi(prixJour * coeff);
+  const total    = arrondi(prixUnit * qty);
   const caut     = Math.round(pa * rule.caut * qty);
 
   return {
@@ -982,6 +987,7 @@ function tvaLabel() {
 window.prixAffiche = prixAffiche;
 window.labelPrix   = labelPrix;
 window.tvaLabel    = tvaLabel;
+window.arrondi     = arrondi;
 
 // ─── EXPOSITION GLOBALE ─────────────────────────────────────
 window.App    = App;
