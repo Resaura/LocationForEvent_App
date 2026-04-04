@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__claude_ai_Supabase__execute_sql",
+      "Bash(node -c js/app.js)",
+      "Bash(node -c js/devis.js)",
+      "Bash(node -c js/print.js)",
+      "Bash(node -c js/epicerie.js)",
+      "Bash(grep -rn \"^window\\\\.\" js/*.js)",
+      "Bash(grep -n \"^window\\\\.\" js/*.js)",
+      "Bash(node -c js/stats.js)",
+      "mcp__claude_ai_Supabase__list_tables",
+      "mcp__claude_ai_Supabase__apply_migration"
+    ]
+  }
+}

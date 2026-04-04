@@ -1,0 +1,40 @@
+{
+  "name": "LocationForEvent — Gestion",
+  "short_name": "LFEvent",
+  "description": "Gestion catalogue, devis et clients pour société de location événementielle",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#0F2744",
+  "background_color": "#0F2744",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nouveau devis",
+      "short_name": "Devis",
+      "url": "./index.html#nouveau-devis",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Catalogue",
+      "short_name": "Catalogue",
+      "url": "./index.html#catalogue",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["business", "productivity"]
+}

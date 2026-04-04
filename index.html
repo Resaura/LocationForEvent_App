@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#0F2744">
+  <meta name="description" content="LocationForEvent — Gestion de location de matériel événementiel">
+  <title>LocationForEvent — Gestion</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════
+     LOADING OVERLAY
+══════════════════════════════════════════════════════════════ -->
+<div id="app-loading">
+  <h1>LocationForEvent</h1>
+  <p>Connexion à la base de données…</p>
+  <div class="spinner"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     TOAST
+══════════════════════════════════════════════════════════════ -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     MOBILE OVERLAY
+══════════════════════════════════════════════════════════════ -->
+<div class="mob-overlay" id="mobOvl"></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     APP SHELL
+══════════════════════════════════════════════════════════════ -->
+<div class="app">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="s-logo">
+      <div class="s-logo-name">LocationForEvent <span id="tva-badge" style="display:none;font-size:.55rem;padding:2px 7px;border-radius:99px;vertical-align:middle;font-weight:700"></span></div>
+      <div class="s-logo-sub">Gestion v3</div>
+    </div>
+
+    <nav class="s-nav">
+      <div class="s-section">Principal</div>
+      <button class="s-item active" data-page="dashboard">
+        <span class="ic"><i data-lucide="layout-dashboard"></i></span>Tableau de bord
+      </button>
+      <button class="s-item" data-page="calendrier">
+        <span class="ic"><i data-lucide="calendar"></i></span>Calendrier
+      </button>
+      <button class="s-item" data-page="catalogue">
+        <span class="ic"><i data-lucide="package"></i></span>Catalogue
+        <span class="s-badge" id="sb-cat">0</span>
+      </button>
+      <button class="s-item" data-page="simulateur">
+        <span class="ic"><i data-lucide="zap"></i></span>Simulateur
+      </button>
+      <button class="s-item" data-page="stats">
+        <span class="ic"><i data-lucide="trending-up"></i></span>Stats &amp; Rentabilité
+      </button>
+
+      <div class="s-section">Commercial</div>
+      <button class="s-item" data-page="nouveau-devis">
+        <span class="ic"><i data-lucide="file-plus"></i></span>Nouveau devis
+      </button>
+      <button class="s-item" data-page="historique">
+        <span class="ic"><i data-lucide="file-text"></i></span>Devis &amp; Factures
+        <span class="s-badge" id="sb-dv">0</span>
+      </button>
+      <button class="s-item" data-page="clients">
+        <span class="ic"><i data-lucide="users"></i></span>Clients
+        <span class="s-badge" id="sb-cli">0</span>
+      </button>
+      <button class="s-item" data-page="paiements">
+        <span class="ic"><i data-lucide="credit-card"></i></span>Paiements
+      </button>
+
+      <div class="s-section">Configuration</div>
+      <button class="s-item" data-page="amortissement">
+        <span class="ic"><i data-lucide="percent"></i></span>Amortissement
+      </button>
+      <button class="s-item" data-page="categories">
+        <span class="ic"><i data-lucide="tag"></i></span>Catégories
+      </button>
+      <button class="s-item" data-page="services">
+        <span class="ic"><i data-lucide="wrench"></i></span>Services
+      </button>
+      <button class="s-item" data-page="epicerie">
+        <span class="ic"><i data-lucide="shopping-cart"></i></span>Épicerie
+      </button>
+      <button class="s-item" data-page="parametres">
+        <span class="ic"><i data-lucide="settings"></i></span>Paramètres
+      </button>
+    </nav>
+
+    <div class="s-footer">
+      <div class="s-status">
+        <div class="s-status-dot" id="conn-dot"></div>
+        <span id="conn-label">Connexion…</span>
+      </div>
+      <div class="s-ver">v3.0 · LocationForEvent</div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ────────────────────────────────────────────────── -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="hamburger" id="hamburger" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="topbar-title" id="top-title">Tableau de bord</div>
+      </div>
+      <div class="topbar-right no-print">
+        <button class="btn btn-ghost btn-sm" onclick="App.exportData()">⬇️ Export</button>
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+          ⬆️ Import
+          <input type="file" accept=".json" onchange="App.importData(event)" style="display:none">
+        </label>
+      </div>
+    </header>
+
+    <!-- PAGES -->
+    <main class="content">
+
+      <!-- ════════════ CALENDRIER ════════════ -->
+      <div class="page" id="page-calendrier">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title">📅 Calendrier des événements</div>
+          </div>
+          <div class="card-bd" id="cal-wrap"></div>
+        </div>
+      </div>
+
+      <!-- ════════════ STATS & RENTABILITÉ ════════════ -->
+      <div class="page" id="page-stats">
+        <div class="g4 mb-4" id="stats-kpi"></div>
+
+        <div class="card mb-4">
+          <div class="card-hd">
+            <div class="card-title">📊 CA mensuel (devis acceptés)</div>
+          </div>
+          <div class="card-bd" id="stats-chart"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title">📦 Rentabilité matériel</div>
+          </div>
+          <div class="card-bd">
+            <div class="chips mb-2" id="stats-chips"></div>
+            <div class="chips mb-3" id="stats-statut-chips"></div>
+            <div class="tbl-wrap">
+              <table class="dt" id="stats-table">
+                <thead>
+                  <tr>
+                    <th data-col="name" data-label="Matériel" onclick="Stats.sort('name')" style="cursor:pointer">Matériel</th>
+                    <th data-col="pa" data-label="Prix achat" onclick="Stats.sort('pa')" style="cursor:pointer;text-align:right">Prix achat</th>
+                    <th data-col="count" data-label="Nb locations" onclick="Stats.sort('count')" style="cursor:pointer;text-align:center">Nb locations</th>
+                    <th data-col="ca" data-label="CA généré" onclick="Stats.sort('ca')" style="cursor:pointer;text-align:right">CA généré</th>
+                    <th data-col="pct" data-label="% remboursé" onclick="Stats.sort('pct')" style="cursor:pointer">% remboursé</th>
+                    <th data-col="restant" data-label="Restant" onclick="Stats.sort('restant')" style="cursor:pointer;text-align:right">Restant</th>
+                    <th data-col="lastDate" data-label="Dernière loc." onclick="Stats.sort('lastDate')" style="cursor:pointer;text-align:center">Dernière loc.</th>
+                  </tr>
+                </thead>
+                <tbody id="stats-tbody"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="stats-empty" style="display:none">
+              <div class="ei">📈</div>
+              <h3>Aucune donnée</h3>
+              <p>Les statistiques apparaîtront quand des devis seront acceptés</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════ DASHBOARD ════════════ -->
+      <div class="page active" id="page-dashboard">
+        <!-- Raccourcis rapides -->
+        <div class="dash-shortcuts mb-4" id="dash-shortcuts">
+          <button class="btn btn-primary btn-sm" onclick="App.go('nouveau-devis')">✏️ Nouveau devis</button>
+          <button class="btn btn-ghost btn-sm" onclick="typeof Catalogue!=='undefined'&&Catalogue.openModal()">📦 Ajouter matériel</button>
+          <button class="btn btn-ghost btn-sm" onclick="typeof Clients!=='undefined'&&Clients.openModal()">👥 Nouveau client</button>
+          <button class="btn btn-ghost btn-sm" onclick="App.go('calendrier')">📅 Voir calendrier</button>
+        </div>
+        <!-- KPIs Rangée 1 — Vue générale -->
+        <div class="g4 mb-3" id="dash-stats-1"></div>
+        <!-- KPIs Rangée 2 — Financier -->
+        <div class="g4 mb-4" id="dash-stats-2"></div>
+        <!-- Graphique CA mensuel -->
+        <div class="card mb-4">
+          <div class="card-hd">
+            <div class="card-title">📊 CA mensuel — 12 derniers mois</div>
+            <button class="btn btn-ghost btn-sm" data-page="stats">Voir détail →</button>
+          </div>
+          <div class="card-bd no-top" id="dash-chart"></div>
+        </div>
+        <!-- Actions requises + Activité récente -->
+        <div class="g2 mb-4">
+          <div class="card">
+            <div class="card-hd">
+              <div class="card-title">⚡ Actions requises</div>
+            </div>
+            <div class="card-bd no-top" id="dash-actions"></div>
+          </div>
+          <div class="card">
+            <div class="card-hd">
+              <div class="card-title">🕐 Activité récente</div>
+            </div>
+            <div class="card-bd no-top" id="dash-activity"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════ CATALOGUE ════════════ -->
+      <div class="page" id="page-catalogue">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title">📦 Catalogue matériel</div>
+            <button class="btn btn-primary btn-sm" onclick="Catalogue.openModal()">+ Nouveau</button>
+          </div>
+          <div class="card-bd">
+            <div class="flex gap-2 mb-3" style="flex-wrap:wrap">
+              <div class="search-wrap" style="flex:1;min-width:180px">
+                <input type="text" id="cat-search" placeholder="Rechercher…" oninput="Catalogue.filter()">
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="Catalogue.exportCsv()">📥 CSV</button>
+            </div>
+            <div class="chips" id="cat-chips"></div>
+            <div class="tbl-wrap">
+              <table class="dt">
+                <thead>
+                  <tr>
+                    <th>Nom</th>
+                    <th>Catégorie</th>
+                    <th>Prix achat</th>
+                    <th>Statut</th>
+                    <th>Notes</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="cat-tbody"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="cat-empty" style="display:none">
+              <div class="ei">📦</div>
+              <h3>Catalogue vide</h3>
+              <p>Ajoutez votre premier matériel</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════ SIMULATEUR ════════════ -->
+      <div class="page" id="page-simulateur">
+        <div class="g2">
+          <div>
+            <div class="card mb-3">
+              <div class="card-hd"><div class="card-title">⚡ Calculateur de prix</div></div>
+              <div class="card-bd">
+                <div class="fg">
+                  <label class="fl">Matériel</label>
+                  <div class="autocomplete-wrap">
+                    <input type="text" id="sim-search" placeholder="Rechercher un matériel…" oninput="Simulateur.search()" autocomplete="off">
+                    <div class="autocomplete-drop" id="sim-drop"></div>
+                  </div>
+                </div>
+                <div class="r2">
+                  <div class="fg">
+                    <label class="fl">Prix d'achat (€)</label>
+                    <input type="number" id="sim-pa" placeholder="Ex: 350" oninput="Simulateur.calc()">
+                  </div>
+                  <div class="fg">
+                    <label class="fl">Quantité</label>
+                    <input type="number" id="sim-qty" value="1" min="1" oninput="Simulateur.calc()">
+                  </div>
+                </div>
+                <div id="sim-result" style="display:none">
+                  <div class="sim-res">
+                    <div class="sim-grid" id="sim-grid"></div>
+                  </div>
+                  <div class="flex gap-2 mt-3" style="flex-wrap:wrap">
+                    <button class="btn btn-primary btn-sm" onclick="Simulateur.addToDevis()">✏️ Créer un devis</button>
+                    <button class="btn btn-ghost btn-sm" onclick="Simulateur.reset()">✕ Effacer</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-hd">
+              <div class="card-title">📐 Règles d'amortissement</div>
+            </div>
+            <div class="card-bd no-top" id="sim-amort-preview"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════ NOUVEAU DEVIS ════════════ -->
+      <div class="page" id="page-nouveau-devis">
+        <div class="g2">
+          <!-- Colonne gauche : infos + lignes -->
+          <div>
+            <div class="card mb-3">
+              <div class="card-hd">
+                <div class="card-title" id="nd-title">✏️ Nouveau devis</div>
+                <span class="badge bg-blue" id="nd-num-badge" style="display:none"></span>
+              </div>
+              <div class="card-bd">
+                <div class="r2">
+                  <div class="fg">
+                    <label class="fl">Client</label>
+                    <input type="text" id="nd-nom" placeholder="Nom du client" list="nd-cli-list">
+                    <datalist id="nd-cli-list"></datalist>
+                    <div id="nd-cli-hint" style="display:none;font-size:.72rem;color:#059669;margin-top:3px;font-weight:600"></div>
+                  </div>
+                  <div class="fg">
+                    <label class="fl">Type d'événement</label>
+                    <select id="nd-type">
+                      <option>Autre</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="r2">
+                  <div class="fg">
+                    <label class="fl">Téléphone</label>
+                    <input type="tel" id="nd-tel" placeholder="06 …">
+                  </div>
+                  <div class="fg">
+                    <label class="fl">Email</label>
+                    <input type="email" id="nd-email" placeholder="client@…">
+                  </div>
+                </div>
+                <div class="fg">
+                  <label class="fl">Lieu de l'événement</label>
+                  <input type="text" id="nd-lieu" placeholder="Adresse ou ville">
+                </div>
+                <div class="r2">
+                  <div class="fg">
+                    <label class="fl">Date et heure de récupération</label>
+                    <input type="datetime-local" id="nd-recup" onchange="Devis.calcDuree()">
+                  </div>
+                  <div class="fg">
+                    <label class="fl">Date et heure de retour</label>
+                    <input type="datetime-local" id="nd-retour" onchange="Devis.calcDuree()">
+                  </div>
+                </div>
+                <div id="nd-duree-hint" style="display:none;font-size:.76rem;margin-top:-8px;margin-bottom:10px"></div>
+                <div class="fg">
+                  <label class="fl">Distance aller (km)</label>
+                  <div class="input-addon">
+                    <input type="number" id="nd-km" placeholder="0" min="0" oninput="Devis.updateTotals()">
+                    <span class="addon">km</span>
+                  </div>
+                </div>
+                <div class="fg">
+                  <label class="fl">Notes</label>
+                  <textarea id="nd-notes" placeholder="Notes internes, conditions particulières…"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Colonne droite : ajout matériel + récap -->
+          <div>
+            <div class="card mb-3">
+              <div class="card-hd"><div class="card-title">➕ Ajouter un matériel</div></div>
+              <div class="card-bd">
+                <div class="fg">
+                  <label class="fl">Rechercher</label>
+                  <div class="autocomplete-wrap">
+                    <input type="text" id="nd-mat-q" placeholder="Nom du matériel…" oninput="Devis.matSearch()" autocomplete="off">
+                    <div class="autocomplete-drop" id="nd-mat-drop"></div>
+                  </div>
+                </div>
+                <div class="r3">
+                  <div class="fg">
+                    <label class="fl">Durée</label>
+                    <select id="nd-dur">
+                      <option value="jour">1 Jour</option>
+                      <option value="weekend" selected>Week-end</option>
+                      <option value="semaine">Semaine</option>
+                      <option value="2s">2 Semaines</option>
+                      <option value="3s">3 Semaines</option>
+                      <option value="mois">1 Mois</option>
+                    </select>
+                  </div>
+                  <div class="fg">
+                    <label class="fl">Qté</label>
+                    <input type="number" id="nd-qty" value="1" min="1" oninput="Devis.calcLine()">
+                  </div>
+                  <div class="fg">
+                    <label class="fl">P.A. (€)</label>
+                    <input type="number" id="nd-pa" placeholder="Auto" oninput="Devis.calcLine()">
+                  </div>
+                </div>
+                <div class="info" id="nd-preview" style="display:none"></div>
+                <div class="fg">
+                  <label class="fl">Prix loc. manuel (€ total)</label>
+                  <input type="number" id="nd-prix-loc" placeholder="Laissez vide pour calcul auto">
+                </div>
+                <button class="btn btn-primary fw" onclick="Devis.addLine()">+ Ajouter la ligne</button>
+              </div>
+            </div>
+
+            <div class="card mb-3">
+              <div class="card-hd"><div class="card-title">🔧 Ajouter un service</div></div>
+              <div class="card-bd" id="nd-svc-picker"></div>
+            </div>
+
+            <div class="card mb-3">
+              <div class="card-hd"><div class="card-title">🛒 Ajouter un produit épicerie</div></div>
+              <div class="card-bd" id="nd-epi-picker"></div>
+            </div>
+
+            <div class="card">
+              <div class="card-hd">
+                <div class="card-title">📋 Récapitulatif</div>
+              </div>
+              <div class="card-bd">
+                <div id="nd-lines-wrap" style="display:none">
+                  <div id="nd-lines"></div>
+                  <!-- Remises -->
+                  <div id="nd-remises-applied" style="display:none;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border)"></div>
+                  <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+                    <select id="nd-remise-sel" style="flex:1;font-size:.8rem">
+                      <option value="">— Remise —</option>
+                    </select>
+                    <button class="btn btn-ghost btn-sm" onclick="Devis.addRemise()" style="white-space:nowrap">🏷️ Appliquer</button>
+                  </div>
+                  <div class="dv-total-row">
+                    <span>Total HT</span>
+                    <span id="nd-tot">0,00 €</span>
+                  </div>
+                  <div id="nd-tva-detail" style="display:none;text-align:right;font-size:.78rem;color:var(--grey);margin-top:4px"></div>
+                  <div class="flex jb text-sm mt-2">
+                    <span>Caution estimée</span>
+                    <span id="nd-caut">0 €</span>
+                  </div>
+                  <div class="liv-box" id="nd-liv" style="display:none">
+                    <div class="liv-row"><span>Livraison aller</span><span id="nd-al"></span></div>
+                    <div class="liv-row"><span>Retour (si récup.)</span><span id="nd-ret"></span></div>
+                  </div>
+                </div>
+                <div class="empty" id="nd-empty">
+                  <div class="ei">🛒</div>
+                  <p>Aucune ligne pour l'instant</p>
+                </div>
+                <div class="sep"></div>
+                <div class="btn-row">
+                  <button class="btn btn-primary" onclick="Devis.save()">💾 Enregistrer devis</button>
+                  <button class="btn btn-gold btn-sm" onclick="Devis.saveAsFacture()">🧾 Facturer</button>
+                  <button class="btn btn-ghost btn-sm" onclick="Devis.print()">🖨️ Aperçu</button>
+                  <button class="btn btn-ghost btn-sm" onclick="Devis.download()">⬇️ PDF</button>
+                  <button class="btn btn-ghost btn-sm" onclick="Devis.reset()">✕ Vider</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════ SERVICES ════════════ -->
+      <div class="page" id="page-services">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title">🔧 Prestations &amp; Services</div>
+            <button class="btn btn-primary btn-sm" onclick="Services.openModal()">+ Nouveau service</button>
+          </div>
+          <div class="card-bd">
+            <div id="svc-list"></div>
+            <div class="empty" id="svc-empty" style="display:none">
+              <div class="ei">🔧</div>
+              <h3>Aucun service</h3>
+              <p>Créez vos premières prestations facturables</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════ ÉPICERIE ════════════ -->
+      <div class="page" id="page-epicerie">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title">🛒 Épicerie &amp; Consommables</div>
+            <button class="btn btn-primary btn-sm" onclick="Epicerie.openModal()">+ Ajouter un produit</button>
+          </div>
+          <div class="card-bd">
+            <div class="flex gap-2 mb-3" style="flex-wrap:wrap">
+              <div class="search-wrap" style="flex:1;min-width:180px">
+                <input type="text" id="epi-search" placeholder="Rechercher un produit…" oninput="Epicerie.filter()">
+              </div>
+            </div>
+            <div class="chips" id="epi-chips"></div>
+            <div id="epi-list"></div>
+            <div class="empty" id="epi-empty" style="display:none">
+              <div class="ei">🛒</div>
+              <h3>Aucun produit</h3>
+              <p>Ajoutez vos premiers produits épicerie</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════ HISTORIQUE ════════════ -->
+      <div class="page" id="page-historique">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title">📋 Devis &amp; Factures</div>
+            <button class="btn btn-ghost btn-sm" onclick="Historique.exportCsv()">📥 CSV</button>
+          </div>
+          <div class="card-bd">
+            <div class="flex gap-2 mb-3" style="flex-wrap:wrap">
+              <div class="search-wrap" style="flex:1;min-width:180px">
+                <input type="text" id="hist-search" placeholder="Client, numéro…" oninput="Historique.filter()">
+              </div>
+            </div>
+            <div class="chips" id="hist-chips"></div>
+            <div id="hist-list"></div>
+            <div class="empty" id="hist-empty" style="display:none">
+              <div class="ei">📋</div>
+              <h3>Aucun devis</h3>
+              <p>Créez votre premier devis depuis la page "Nouveau devis"</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════ CLIENTS ════════════ -->
+      <div class="page" id="page-clients">
+        <!-- KPI clients -->
+        <div class="dash-grid mb-3" id="cli-kpi"></div>
+
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title">👥 Fichier clients</div>
+            <button class="btn btn-primary btn-sm" onclick="Clients.openModal()">+ Nouveau</button>
+          </div>
+          <div class="card-bd">
+            <div class="search-wrap mb-3">
+              <input type="text" id="cli-search" placeholder="Rechercher un client…" oninput="Clients.filter()">
+            </div>
+
+            <!-- Badge filter chips -->
+            <div id="cli-badge-chips" class="chips-row mb-2"></div>
+
+            <!-- Sort chips -->
+            <div id="cli-sort-chips" class="chips-row mb-3"></div>
+
+            <div id="cli-list"></div>
+            <div class="empty" id="cli-empty" style="display:none">
+              <div class="ei">👥</div>
+              <h3>Aucun client</h3>
+              <p>Les clients sont créés automatiquement à chaque devis</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════ PAIEMENTS ════════════ -->
+      <div class="page" id="page-paiements">
+        <div class="g4 mb-4" id="pay-kpi"></div>
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title">💳 Paiements</div>
+            <button class="btn btn-gold btn-sm" onclick="Paiements.exportCsv()">📥 Export CSV</button>
+          </div>
+          <div class="card-bd">
+            <div id="pay-chips" class="chips-row mb-3"></div>
+            <div id="pay-list"></div>
+            <div class="empty" id="pay-empty" style="display:none">
+              <div class="ei">💳</div>
+              <h3>Aucun paiement</h3>
+              <p>Les paiements apparaissent quand vous gérez le suivi depuis un devis accepté</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════ AMORTISSEMENT ════════════ -->
+      <div class="page" id="page-amortissement">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title">📐 Table d'amortissement</div>
+            <div class="btn-row">
+              <button class="btn btn-primary btn-sm" onclick="Amortissement.save()">💾 Sauvegarder</button>
+              <button class="btn btn-ghost btn-sm" onclick="Amortissement.reset()">↩️ Réinitialiser</button>
+            </div>
+          </div>
+          <div class="card-bd">
+            <div class="info mb-3">
+              Le prix jour = Prix d'achat ÷ jours d'amortissement. Les coefficients multiplient ce prix jour selon la durée.
+            </div>
+            <div class="tbl-wrap amort-wrap">
+              <table class="dt" id="amort-table">
+                <thead>
+                  <tr>
+                    <th>Tranche</th>
+                    <th>Jours amort.</th>
+                    <th>Weekend ×</th>
+                    <th>Semaine ×</th>
+                    <th>2 Sem. ×</th>
+                    <th>3 Sem. ×</th>
+                    <th>Mois ×</th>
+                    <th>Caution %</th>
+                  </tr>
+                </thead>
+                <tbody id="amort-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════ CATÉGORIES ════════════ -->
+      <div class="page" id="page-categories">
+        <div class="g2">
+          <div class="card">
+            <div class="card-hd"><div class="card-title">🏷️ Gérer les catégories</div></div>
+            <div class="card-bd">
+              <div class="flex gap-2 mb-3">
+                <input type="text" id="new-cat-input" placeholder="Nouvelle catégorie…" style="flex:1" onkeydown="if(event.key==='Enter')Categories.add()">
+                <button class="btn btn-primary btn-sm" onclick="Categories.add()">+ Ajouter</button>
+              </div>
+              <div id="cat-list-mgr"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><div class="card-title">📊 Statistiques par catégorie</div></div>
+            <div class="card-bd no-top" id="cat-stats-bd"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════ PARAMÈTRES ════════════ -->
+      <div class="page" id="page-parametres">
+        <div class="g2">
+          <div class="card">
+            <div class="card-hd"><div class="card-title">🏢 Informations société</div></div>
+            <div class="card-bd">
+              <div class="fg"><label class="fl">Nom société</label><input type="text" id="p-nom"></div>
+              <div class="r2">
+                <div class="fg"><label class="fl">Téléphone</label><input type="tel" id="p-tel"></div>
+                <div class="fg"><label class="fl">Email</label><input type="email" id="p-email"></div>
+              </div>
+              <div class="fg"><label class="fl">Adresse</label><input type="text" id="p-adr"></div>
+              <div class="r2">
+                <div class="fg"><label class="fl">Site web</label><input type="text" id="p-site"></div>
+                <div class="fg"><label class="fl">SIRET</label><input type="text" id="p-siret"></div>
+              </div>
+              <div class="r2">
+                <div class="fg">
+                  <label class="fl">Coût km (€)</label>
+                  <div class="input-addon">
+                    <input type="number" id="p-km" value="1.5" step="0.1">
+                    <span class="addon">€/km</span>
+                  </div>
+                </div>
+                <div class="fg">
+                  <label class="fl">Validité devis</label>
+                  <div class="input-addon">
+                    <input type="number" id="p-valid" value="30">
+                    <span class="addon">jours</span>
+                  </div>
+                </div>
+              </div>
+              <div class="fg">
+                <label class="fl">Mentions légales / CGV</label>
+                <textarea id="p-mentions" style="min-height:80px"></textarea>
+              </div>
+              <button class="btn btn-primary fw" onclick="Params.save()">💾 Sauvegarder</button>
+            </div>
+          </div>
+          <div>
+            <div class="card mb-3">
+              <div class="card-hd"><div class="card-title">🧾 TVA</div></div>
+              <div class="card-bd">
+                <div class="fg">
+                  <label class="fl">Taux de TVA</label>
+                  <select id="p-tva">
+                    <option value="0">Sans TVA</option>
+                    <option value="0.055">5,5 %</option>
+                    <option value="0.10">10 %</option>
+                    <option value="0.20">20 %</option>
+                  </select>
+                </div>
+                <div class="fg" style="margin-top:8px">
+                  <label style="display:flex;align-items:center;gap:8px;font-size:.84rem;cursor:pointer">
+                    <input type="checkbox" id="p-ttc" style="width:16px;height:16px">
+                    Affichage TTC (sinon HT)
+                  </label>
+                </div>
+                <div style="font-size:.72rem;color:var(--grey);margin-top:6px">
+                  Ce paramètre change l'affichage de tous les montants dans l'app. Les prix de base restent en HT.
+                </div>
+                <button class="btn btn-primary fw mt-2" onclick="Params.save()">💾 Sauvegarder</button>
+              </div>
+            </div>
+            <div class="card mb-3">
+              <div class="card-hd"><div class="card-title">💾 Données</div></div>
+              <div class="card-bd">
+                <div class="text-sm mb-3" id="p-storage-info"></div>
+                <div class="btn-row">
+                  <button class="btn btn-ghost btn-sm" onclick="App.exportData()">⬇️ Exporter JSON</button>
+                  <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+                    ⬆️ Importer
+                    <input type="file" accept=".json" onchange="App.importData(event)" style="display:none">
+                  </label>
+                </div>
+                <div class="sep"></div>
+                <button class="btn btn-danger btn-sm" onclick="App.clearAll()">🗑️ Tout réinitialiser</button>
+              </div>
+            </div>
+            <div class="card mb-3">
+              <div class="card-hd"><div class="card-title">📅 Types d'événements</div></div>
+              <div class="card-bd">
+                <div class="flex gap-2 mb-3">
+                  <input type="text" id="p-type-input" placeholder="Nouveau type…" style="flex:1" onkeydown="if(event.key==='Enter')Params.addType()">
+                  <button class="btn btn-primary btn-sm" onclick="Params.addType()">+ Ajouter</button>
+                </div>
+                <div id="p-types-list"></div>
+              </div>
+            </div>
+            <div class="card mb-3">
+              <div class="card-hd">
+                <div class="card-title">🏷️ Remises</div>
+                <button class="btn btn-primary btn-sm" onclick="Remises.openModal()">+ Créer</button>
+              </div>
+              <div class="card-bd">
+                <div id="p-remises-list"></div>
+              </div>
+            </div>
+            <div class="card mb-3">
+              <div class="card-hd"><div class="card-title">🎨 Design des devis</div></div>
+              <div class="card-bd">
+                <!-- Couleurs -->
+                <div class="r2">
+                  <div class="fg">
+                    <label class="fl">Couleur principale</label>
+                    <input type="color" id="p-design-couleur1" value="#0F2744" onchange="Params.renderDesignPreview()" style="width:100%;height:36px;cursor:pointer;border:1px solid var(--border);border-radius:6px;padding:2px">
+                  </div>
+                  <div class="fg">
+                    <label class="fl">Couleur secondaire</label>
+                    <input type="color" id="p-design-couleur2" value="#2563EB" onchange="Params.renderDesignPreview()" style="width:100%;height:36px;cursor:pointer;border:1px solid var(--border);border-radius:6px;padding:2px">
+                  </div>
+                </div>
+                <!-- Logo -->
+                <div class="fg">
+                  <label class="fl">Logo (image)</label>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <label class="btn btn-ghost btn-sm" style="cursor:pointer;flex:1;text-align:center">
+                      📷 Choisir une image
+                      <input type="file" accept="image/*" id="p-design-logo-input" onchange="Params.handleLogoUpload(event)" style="display:none">
+                    </label>
+                    <button class="btn btn-danger btn-sm" onclick="Params.removeLogo()" id="p-design-logo-del" style="display:none">🗑️</button>
+                  </div>
+                  <div id="p-design-logo-preview" style="margin-top:6px;text-align:center"></div>
+                </div>
+                <!-- Disposition -->
+                <div class="fg">
+                  <label class="fl">Disposition en-tête</label>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap">
+                    <label class="chip on" style="cursor:pointer" id="p-design-disp-A">
+                      <input type="radio" name="p-design-disp" value="A" checked onchange="Params.renderDesignPreview()" style="display:none"> A — Logo à gauche
+                    </label>
+                    <label class="chip" style="cursor:pointer" id="p-design-disp-B">
+                      <input type="radio" name="p-design-disp" value="B" onchange="Params.renderDesignPreview()" style="display:none"> B — Classique
+                    </label>
+                    <label class="chip" style="cursor:pointer" id="p-design-disp-C">
+                      <input type="radio" name="p-design-disp" value="C" onchange="Params.renderDesignPreview()" style="display:none"> C — Centré
+                    </label>
+                  </div>
+                </div>
+                <!-- Police -->
+                <div class="fg">
+                  <label class="fl">Police du document</label>
+                  <select id="p-design-font" onchange="Params.renderDesignPreview()">
+                    <option value="classique">Classique (Helvetica)</option>
+                    <option value="moderne">Moderne (Sans-serif)</option>
+                    <option value="elegante">Élégante (Serif)</option>
+                  </select>
+                </div>
+                <!-- Toggles -->
+                <div class="fg" style="margin-top:4px">
+                  <label class="fl">Afficher / masquer</label>
+                  <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
+                    <label style="display:flex;align-items:center;gap:8px;font-size:.84rem;cursor:pointer">
+                      <input type="checkbox" id="p-design-caution" checked onchange="Params.renderDesignPreview()" style="width:16px;height:16px"> Caution estimée
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;font-size:.84rem;cursor:pointer">
+                      <input type="checkbox" id="p-design-mentions" checked onchange="Params.renderDesignPreview()" style="width:16px;height:16px"> Mentions légales
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;font-size:.84rem;cursor:pointer">
+                      <input type="checkbox" id="p-design-siret" checked onchange="Params.renderDesignPreview()" style="width:16px;height:16px"> SIRET
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;font-size:.84rem;cursor:pointer">
+                      <input type="checkbox" id="p-design-filigrane" onchange="Params.renderDesignPreview()" style="width:16px;height:16px"> Filigrane (statut en fond)
+                    </label>
+                  </div>
+                </div>
+                <button class="btn btn-primary fw mt-2" onclick="Params.saveDesign()">💾 Sauvegarder le design</button>
+                <!-- Aperçu -->
+                <div style="margin-top:14px">
+                  <label class="fl">Aperçu</label>
+                  <div id="p-design-preview" style="border:1px solid var(--border);border-radius:8px;padding:12px;background:#fff;min-height:180px;font-size:11px;margin-top:4px;overflow:hidden"></div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-hd"><div class="card-title">📲 PWA</div></div>
+              <div class="card-bd">
+                <div class="text-sm mb-3" id="pwa-status">Vérification…</div>
+                <button class="btn btn-primary btn-sm" id="pwa-install-btn" style="display:none" onclick="Pwa.install()">📲 Installer l'app</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════════════════════════════════
+     MODALES
+══════════════════════════════════════════════════════════════ -->
+
+<!-- Modal Matériel -->
+<div class="overlay" id="m-mat">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title" id="m-mat-title">Nouveau matériel</div>
+      <button class="modal-x" onclick="App.closeModal('m-mat')">✕</button>
+    </div>
+    <div class="modal-bd">
+      <input type="hidden" id="m-mat-id">
+      <div class="fg"><label class="fl">Nom *</label><input type="text" id="m-mat-nom" placeholder="Ex: Crêpière pro"></div>
+      <div class="r2">
+        <div class="fg">
+          <label class="fl">Catégorie</label>
+          <select id="m-mat-cat"></select>
+        </div>
+        <div class="fg">
+          <label class="fl">Statut</label>
+          <select id="m-mat-statut">
+            <option value="owned">✅ Déjà possédé</option>
+            <option value="future">🔄 À acquérir</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Prix d'achat (€)</label>
+        <input type="number" id="m-mat-pa" placeholder="Ex: 350" oninput="Catalogue.previewPrix()">
+      </div>
+      <div class="info" id="m-mat-prev" style="display:none"></div>
+      <div class="fg"><label class="fl">Notes</label><input type="text" id="m-mat-notes" placeholder="Capacité, marque…"></div>
+      <div class="sep"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="Catalogue.save()">💾 Enregistrer</button>
+        <button class="btn btn-ghost" onclick="App.closeModal('m-mat')">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Devis detail -->
+<div class="overlay" id="m-dv">
+  <div class="modal modal-lg">
+    <div class="modal-hd">
+      <div class="modal-title" id="m-dv-title">Devis</div>
+      <button class="modal-x" onclick="App.closeModal('m-dv')">✕</button>
+    </div>
+    <div class="modal-bd" id="m-dv-bd"></div>
+  </div>
+</div>
+
+<!-- Modal Client -->
+<div class="overlay" id="m-cli">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title" id="m-cli-title">Nouveau client</div>
+      <button class="modal-x" onclick="App.closeModal('m-cli')">✕</button>
+    </div>
+    <div class="modal-bd">
+      <input type="hidden" id="m-cli-id">
+      <div class="fg"><label class="fl">Nom *</label><input type="text" id="m-cli-nom"></div>
+      <div class="r2">
+        <div class="fg"><label class="fl">Téléphone</label><input type="tel" id="m-cli-tel"></div>
+        <div class="fg"><label class="fl">Email</label><input type="email" id="m-cli-email"></div>
+      </div>
+      <div class="fg"><label class="fl">Adresse</label><input type="text" id="m-cli-adr"></div>
+      <div class="fg"><label class="fl">Notes</label><textarea id="m-cli-notes"></textarea></div>
+      <div class="sep"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="Clients.save()">💾 Enregistrer</button>
+        <button class="btn btn-ghost" onclick="App.closeModal('m-cli')">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Fiche client détaillée -->
+<div class="overlay" id="m-cli-detail">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hd">
+      <div class="modal-title" id="m-cli-detail-title">Fiche client</div>
+      <button class="modal-x" onclick="App.closeModal('m-cli-detail')">✕</button>
+    </div>
+    <div class="modal-bd" id="m-cli-detail-bd"></div>
+  </div>
+</div>
+
+<!-- Modal Remise -->
+<div class="overlay" id="m-rem">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-hd">
+      <div class="modal-title" id="m-rem-title">Nouvelle remise</div>
+      <button class="modal-x" onclick="App.closeModal('m-rem')">✕</button>
+    </div>
+    <div class="modal-bd">
+      <input type="hidden" id="m-rem-id">
+      <div class="fg"><label class="fl">Nom *</label><input type="text" id="m-rem-nom" placeholder="Ex: Remise professionnel"></div>
+      <div class="r2">
+        <div class="fg">
+          <label class="fl">Type</label>
+          <select id="m-rem-type">
+            <option value="pourcentage">Pourcentage (%)</option>
+            <option value="fixe">Montant fixe (€)</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="fl">Valeur *</label>
+          <input type="number" id="m-rem-val" placeholder="Ex: 10" min="0" step="0.01">
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Description</label><input type="text" id="m-rem-desc" placeholder="Optionnel"></div>
+      <div class="sep"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="Remises.save()">💾 Enregistrer</button>
+        <button class="btn btn-ghost" onclick="App.closeModal('m-rem')">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Paiement -->
+<div class="overlay" id="m-pay">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-hd">
+      <div class="modal-title" id="m-pay-title">Suivi paiement</div>
+      <button class="modal-x" onclick="App.closeModal('m-pay')">✕</button>
+    </div>
+    <div class="modal-bd" id="m-pay-bd"></div>
+  </div>
+</div>
+
+<!-- Modal Service -->
+<div class="overlay" id="m-svc">
+  <div class="modal modal-lg">
+    <div class="modal-hd">
+      <div class="modal-title" id="m-svc-title">Nouveau service</div>
+      <button class="modal-x" onclick="App.closeModal('m-svc')">✕</button>
+    </div>
+    <div class="modal-bd">
+      <input type="hidden" id="m-svc-id">
+      <div class="r2">
+        <div class="fg">
+          <label class="fl">Nom du service *</label>
+          <input type="text" id="m-svc-nom" placeholder="Ex: Installation barnum">
+        </div>
+        <div class="fg">
+          <label class="fl">Description</label>
+          <input type="text" id="m-svc-desc" placeholder="Optionnel">
+        </div>
+      </div>
+      <div class="sep"></div>
+      <div class="flex jb items-c mb-3">
+        <strong style="font-size:.85rem;color:var(--navy)">Options</strong>
+        <button class="btn btn-ghost btn-sm" onclick="Services.addOption()">+ Ajouter une option</button>
+      </div>
+      <div style="font-size:.72rem;color:var(--grey);margin-bottom:8px;display:grid;grid-template-columns:1fr 80px 110px auto auto;gap:6px;padding:0 4px">
+        <span>Nom</span><span>Prix</span><span>Type</span><span>Oblig.</span><span></span>
+      </div>
+      <div id="m-svc-options"></div>
+      <div class="sep"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="Services.save()">💾 Enregistrer</button>
+        <button class="btn btn-ghost" onclick="App.closeModal('m-svc')">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Relance -->
+<div class="overlay" id="m-relance">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title" id="m-rel-title">🔔 Relancer le devis</div>
+      <button class="modal-x" onclick="App.closeModal('m-relance')">✕</button>
+    </div>
+    <div class="modal-bd">
+      <input type="hidden" id="m-rel-dv-id">
+      <div class="fg">
+        <label class="fl">Date de relance</label>
+        <input type="date" id="m-rel-date">
+      </div>
+      <div class="fg">
+        <label class="fl">Notes</label>
+        <textarea id="m-rel-notes" placeholder="Message personnalisé, contexte de la relance…" style="min-height:80px"></textarea>
+      </div>
+      <div class="sep"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="Historique.saveRelance()">💾 Enregistrer</button>
+        <button class="btn btn-gold btn-sm" onclick="Historique.sendRelanceEmail()">📧 Envoyer par email</button>
+        <button class="btn btn-ghost" onclick="App.closeModal('m-relance')">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Renommer catégorie -->
+<div class="overlay" id="m-cat-ren">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title">Renommer la catégorie</div>
+      <button class="modal-x" onclick="App.closeModal('m-cat-ren')">✕</button>
+    </div>
+    <div class="modal-bd">
+      <input type="hidden" id="ren-cat-old">
+      <div class="fg"><label class="fl">Nouveau nom</label><input type="text" id="ren-cat-new"></div>
+      <div class="sep"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="Categories.rename()">Renommer</button>
+        <button class="btn btn-ghost" onclick="App.closeModal('m-cat-ren')">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Épicerie -->
+<div class="overlay" id="m-epi">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title" id="m-epi-title">Nouveau produit</div>
+      <button class="modal-x" onclick="App.closeModal('m-epi')">✕</button>
+    </div>
+    <div class="modal-bd">
+      <input type="hidden" id="m-epi-id">
+      <div class="fg"><label class="fl">Nom *</label><input type="text" id="m-epi-nom" placeholder="Ex: Huile tournesol 5L"></div>
+      <div class="r2">
+        <div class="fg">
+          <label class="fl">Prix unitaire (€)</label>
+          <input type="number" id="m-epi-prix" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <div class="fg">
+          <label class="fl">Unité</label>
+          <select id="m-epi-unite">
+            <option value="unité">Unité</option>
+            <option value="kg">kg</option>
+            <option value="L">L</option>
+            <option value="bidon">Bidon</option>
+            <option value="pot">Pot</option>
+            <option value="sachet">Sachet</option>
+            <option value="bouteille">Bouteille</option>
+            <option value="paquet">Paquet</option>
+          </select>
+        </div>
+      </div>
+      <div class="r2">
+        <div class="fg">
+          <label class="fl">Catégorie</label>
+          <select id="m-epi-cat">
+            <option value="Huiles">Huiles</option>
+            <option value="Sucré">Sucré</option>
+            <option value="Salé">Salé</option>
+            <option value="Boissons">Boissons</option>
+            <option value="Consommables">Consommables</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="fl">Conservation</label>
+          <select id="m-epi-conserv">
+            <option value="Sec">Sec</option>
+            <option value="Frais">Frais</option>
+            <option value="Surgelé">Surgelé</option>
+            <option value="Ambiant">Ambiant</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.84rem">
+          <input type="checkbox" id="m-epi-actif" checked>
+          Actif (visible dans les devis)
+        </label>
+      </div>
+      <div class="sep"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="Epicerie.save()">💾 Enregistrer</button>
+        <button class="btn btn-ghost" onclick="App.closeModal('m-epi')">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SCRIPTS (ordre impératif)
+══════════════════════════════════════════════════════════════ -->
+<script src="js/supabase.js"></script>
+<script src="js/app.js"></script>
+<script src="js/catalogue.js"></script>
+<script src="js/categories.js"></script>
+<script src="js/simulateur.js"></script>
+<script src="js/devis.js"></script>
+<script src="js/clients.js"></script>
+<script src="js/amortissement.js"></script>
+<script src="js/services.js"></script>
+<script src="js/epicerie.js"></script>
+<script src="js/remises.js"></script>
+<script src="js/calendrier.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/paiements.js"></script>
+<script src="js/print.js"></script>
+<script src="js/pwa.js"></script>
+<script>
+  // Initialiser les icônes Lucide
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  });
+</script>
+
+</body>
+</html>
