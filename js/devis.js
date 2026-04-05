@@ -142,17 +142,19 @@ const Devis = (() => {
     const pa     = parseFloat(_getVal('nd-pa')) || _selItem?.pa || null;
     const dur    = _getVal('nd-dur') || 'weekend';
     const qty    = parseInt(_getVal('nd-qty')) || 1;
+    const tva    = _selItem?.tva || 0;
     const prev   = document.getElementById('nd-preview');
     if (!prev) return;
 
     if (!pa) { prev.style.display = 'none'; _setAttr('nd-prix-loc', 'placeholder', 'Facultatif'); return; }
 
-    const r = calc(pa, dur, qty);
+    const r = calc(pa, dur, qty, tva);
     if (!r) { prev.style.display = 'none'; return; }
 
-    _setAttr('nd-prix-loc', 'placeholder', r.disp.toFixed(2));
+    _setAttr('nd-prix-loc', 'placeholder', r.prixHT.toFixed(2));
     prev.style.display = 'block';
-    prev.innerHTML = `<strong>Prix calculé :</strong> ${r.disp.toFixed(2)} € (×${qty}) · Caution : ${r.caut} €`;
+    const ttcInfo = tva > 0 ? ` · TTC : ${r.prixTTC.toFixed(2)} €` : '';
+    prev.innerHTML = `<strong>Prix calculé HT :</strong> ${r.prixHT.toFixed(2)} € (×${qty})${ttcInfo} · Caution : ${r.caut} €`;
   }
 
   // ── Ajouter une ligne ─────────────────────────────────────
@@ -162,24 +164,28 @@ const Devis = (() => {
     const qty         = parseInt(_getVal('nd-qty')) || 1;
     const prixManuel  = parseFloat(_getVal('nd-prix-loc')) || null;
     const name        = _selItem?.name || _getVal('nd-mat-q').trim();
+    const tva         = _selItem?.tva || 0;
 
     if (!name) { App.toast('Sélectionnez ou saisissez un matériel', 'err'); return; }
 
-    let prix, caut;
+    let prixHT, prixTTC, caut;
     if (prixManuel) {
-      prix = prixManuel;
-      caut = pa ? (calc(pa, 'jour', qty)?.caut || 0) : 0;
+      // Prix manuel = considéré HT
+      prixHT  = prixManuel;
+      prixTTC = tva > 0 ? arrondi(prixManuel * (1 + tva)) : prixManuel;
+      caut    = pa ? (calc(pa, 'jour', qty, tva)?.caut || 0) : 0;
     } else if (pa) {
-      const r = calc(pa, dur, qty);
+      const r = calc(pa, dur, qty, tva);
       if (!r) { App.toast('Saisissez un prix manuellement', 'warn'); return; }
-      prix = r.disp;
-      caut = r.caut;
+      prixHT  = r.prixHT;
+      prixTTC = r.prixTTC;
+      caut    = r.caut;
     } else {
       App.toast("Prix d'achat manquant — saisissez un prix manuellement", 'warn');
       return;
     }
 
-    _lines.push({ id: Date.now(), name, dur, qty, pu: prix / qty, prix, caut, tva: _selItem?.tva || 0, remises: [] });
+    _lines.push({ id: Date.now(), name, dur, qty, pu: prixHT / qty, prix: prixHT, prixHT, prixTTC, caut, tva, remises: [] });
 
     // Reset champs ligne
     _setVal('nd-mat-q', '');
@@ -403,7 +409,7 @@ const Devis = (() => {
     let totalRemisesGlobales = 0;
     _remises.forEach(r => {
       if (r.type === 'pourcentage') {
-        r.montant_deduit = arrondi(sousTotal * r.valeur / 100);
+        r.montant_deduit = Math.round(sousTotal * r.valeur / 100 * 100) / 100;
       } else {
         r.montant_deduit = Math.min(r.valeur, sousTotal - totalRemisesGlobales);
       }
@@ -777,7 +783,7 @@ const Devis = (() => {
     const remisesCopy = JSON.parse(JSON.stringify(_remises));
     remisesCopy.forEach(r => {
       if (r.type === 'pourcentage') {
-        r.montant_deduit = arrondi(sousTotal * r.valeur / 100);
+        r.montant_deduit = Math.round(sousTotal * r.valeur / 100 * 100) / 100;
       } else {
         r.montant_deduit = Math.min(r.valeur, sousTotal - totalRemisesGlobales);
       }

@@ -124,11 +124,12 @@ const Catalogue = (() => {
     if (!el) return;
     if (!pa || pa <= 0) { el.style.display = 'none'; return; }
 
+    const tva = parseFloat(_getVal('m-mat-tva')) || 0;
     const durations = ['jour', 'weekend', 'semaine', '2s', '3s', 'mois'];
     const labels    = ['Jour', 'W-end', 'Semaine', '2 sem.', '3 sem.', 'Mois'];
     const parts = durations.map((d, i) => {
-      const r = calc(pa, d);
-      return r ? `<span style="white-space:nowrap"><strong>${labels[i]} :</strong> ${r.unit.toFixed(2)} €</span>` : '';
+      const r = calc(pa, d, 1, tva);
+      return r ? `<span style="white-space:nowrap"><strong>${labels[i]} :</strong> ${r.unit.toFixed(2)} € HT</span>` : '';
     }).filter(Boolean);
 
     el.style.display = 'block';

@@ -76,9 +76,10 @@ const Simulateur = (() => {
     const infoEl = document.getElementById('sim-item-info');
     if (infoEl) {
       const tva = item.tva || 0;
+      const lbl = labelPrix();
       const tvaPct = tva ? `TVA ${(tva * 100).toFixed(1).replace('.0', '')}%` : 'Sans TVA';
       infoEl.style.display = 'block';
-      infoEl.innerHTML = `<span class="badge bg-blue" style="font-size:.62rem">Prix HT</span> ${item.pa ? item.pa.toLocaleString('fr-FR') + ' €' : '—'} · <span style="color:var(--text3)">${tvaPct}</span>`;
+      infoEl.innerHTML = `<span class="badge bg-blue" style="font-size:.62rem">Prix ${lbl}</span> ${item.pa ? item.pa.toLocaleString('fr-FR') + ' €' : '—'} · <span style="color:var(--text3)">${tvaPct}</span>`;
     }
 
     _calc();
@@ -101,14 +102,13 @@ const Simulateur = (() => {
 
     const tva = _selItem?.tva || 0;
     const cells = durations.map((d, i) => {
-      const result = window.calc ? window.calc(pa, d, qty) : null;
+      const result = window.calc ? window.calc(pa, d, qty, tva) : null;
       if (!result) return `<div class="sim-box"><div class="sim-lbl">${labels[i]}</div><div class="sim-val" style="font-size:.9rem;color:rgba(255,255,255,.3)">—</div></div>`;
       const isMain = d === 'weekend';
-      const prixHT = result.disp;
-      const ttcLine = tva ? `<div class="sim-sub">${(prixHT * (1 + tva)).toFixed(2)} € TTC</div>` : '';
+      const ttcLine = tva ? `<div class="sim-sub">${result.prixTTC.toFixed(2)} € TTC</div>` : '';
       return `<div class="sim-box">
         <div class="sim-lbl">${labels[i]}</div>
-        <div class="sim-val${isMain ? ' gold' : ''}">${prixHT.toFixed(2)} € <span style="font-size:.55rem;font-weight:400;opacity:.6">HT</span></div>
+        <div class="sim-val${isMain ? ' gold' : ''}">${result.prixHT.toFixed(2)} € <span style="font-size:.55rem;font-weight:400;opacity:.6">HT</span></div>
         ${ttcLine}
         <div class="sim-sub">Caution : ${result.caut} €</div>
       </div>`;

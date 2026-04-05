@@ -926,13 +926,19 @@ function arrondi(val) {
 }
 
 // Calcul du prix selon la table d'amortissement
-// Retourne { jour: number, disp: number, caut: number } ou null
-function calc(pa, dur, qty = 1) {
+// pa = prix d'achat tel que saisi, tva = taux TVA article (0.20 etc.), saisie = 'HT'|'TTC'
+// Retourne { jour, unit, disp, prixHT, prixTTC, caut, tva } ou null
+function calc(pa, dur, qty = 1, tva = 0, saisie = null) {
   if (!pa || pa <= 0) return null;
-  const rule = db.amort.find(r => pa >= r.min && pa < r.max);
+
+  // Convertir en HT si saisi en TTC
+  const modeSaisie = saisie || db.params.saisie_prix || 'HT';
+  const paHT = (modeSaisie === 'TTC' && tva > 0) ? pa / (1 + tva) : pa;
+
+  const rule = db.amort.find(r => paHT >= r.min && paHT < r.max);
   if (!rule) return null;
 
-  const prixJour = pa / rule.j;
+  const prixJour = paHT / rule.j;
   let coeff;
   if (dur === 'jour') {
     coeff = 1;
@@ -942,14 +948,18 @@ function calc(pa, dur, qty = 1) {
   if (!coeff) return null;
 
   const prixUnit = arrondi(prixJour * coeff);
-  const total    = arrondi(prixUnit * qty);
-  const caut     = Math.round(pa * rule.caut * qty);
+  const prixHT   = arrondi(prixUnit * qty);
+  const prixTTC  = tva > 0 ? arrondi(prixHT * (1 + tva)) : prixHT;
+  const caut     = Math.round(paHT * rule.caut * qty);
 
   return {
     jour: prixJour,
     unit: prixUnit,
-    disp: total,
-    caut
+    disp: prixHT,
+    prixHT,
+    prixTTC,
+    caut,
+    tva
   };
 }
 
