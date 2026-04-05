@@ -246,7 +246,70 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.topbar-center { display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .topbar-right { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+/* ── TVA Toggle Switch ──────────────────────────────────── */
+.tva-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--n-50);
+  border: 1px solid var(--border);
+  border-radius: var(--r-full, 99px);
+  padding: 4px 14px;
+  user-select: none;
+}
+.tva-toggle-label {
+  font-family: var(--font-display);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  color: var(--n-400);
+  transition: color var(--tr);
+}
+.tva-toggle-label.active {
+  color: var(--blue);
+}
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: var(--n-200);
+  border-radius: 99px;
+  transition: background var(--tr);
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  left: 3px;
+  bottom: 3px;
+  background: var(--white);
+  border-radius: 50%;
+  transition: transform .25s cubic-bezier(.4,.0,.2,1);
+  box-shadow: 0 1px 3px rgba(0,0,0,.15);
+}
+.toggle-switch input:checked + .toggle-slider {
+  background: var(--blue);
+}
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(16px);
+}
 
 .hamburger {
   display: none;
@@ -1060,6 +1123,8 @@ table.dt tbody tr:hover .row-actions { opacity: 1; }
   .sim-grid { grid-template-columns: 1fr; }
   .modal    { border-radius: var(--r-lg); }
   .stat-val { font-size: 1.3rem; }
+  .topbar-right .btn span { display: none; }
+  .tva-toggle { padding: 3px 10px; gap: 6px; }
 }
 
 /* ── Tablet — force 2 col KPIs ─────────────────────────────── */

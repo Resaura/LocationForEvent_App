@@ -294,7 +294,8 @@ const Services = (() => {
     const tva  = parseFloat(document.getElementById('m-svc-tva')?.value) || 0;
     const badge = document.getElementById('m-svc-prix-badge');
     const conv  = document.getElementById('m-svc-conv');
-    if (badge) badge.textContent = 'Prix HT';
+    const lbl = labelPrix();
+    if (badge) badge.textContent = `Prix ${lbl}`;
     if (!conv) return;
     // Calculer total des options fixes
     const opts = _readOpts();
@@ -303,7 +304,9 @@ const Services = (() => {
       conv.textContent = !tva ? 'Pas de TVA appliquée' : '';
       return;
     }
-    conv.textContent = `Total options fixes : ${totalFixe.toFixed(2)} € HT = ${(totalFixe * (1 + tva)).toFixed(2)} € TTC`;
+    conv.textContent = lbl === 'HT'
+      ? `Total options fixes : ${totalFixe.toFixed(2)} € HT = ${(totalFixe * (1 + tva)).toFixed(2)} € TTC`
+      : `Total options fixes : ${totalFixe.toFixed(2)} € TTC = ${(totalFixe / (1 + tva)).toFixed(2)} € HT`;
   }
 
   return { render, openModal, addOption, removeOption, showConversion, save, del, seedDefaults };

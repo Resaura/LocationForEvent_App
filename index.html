@@ -42,7 +42,7 @@
   <!-- ── SIDEBAR ─────────────────────────────────────────────── -->
   <aside class="sidebar" id="sidebar">
     <div class="s-logo">
-      <div class="s-logo-name">LocationForEvent <span id="tva-badge" style="display:none;font-size:.55rem;padding:2px 7px;border-radius:99px;vertical-align:middle;font-weight:700"></span></div>
+      <div class="s-logo-name">LocationForEvent</div>
       <div class="s-logo-sub">Gestion v3</div>
     </div>
 
@@ -118,6 +118,16 @@
           <span></span><span></span><span></span>
         </button>
         <div class="topbar-title" id="top-title">Tableau de bord</div>
+      </div>
+      <div class="topbar-center no-print">
+        <div class="tva-toggle" id="tva-toggle">
+          <span class="tva-toggle-label tva-label-ht active" id="tva-lbl-ht">HT</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="tva-switch" onchange="App.toggleTTC(this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="tva-toggle-label tva-label-ttc" id="tva-lbl-ttc">TTC</span>
+        </div>
       </div>
       <div class="topbar-right no-print">
         <button class="btn btn-ghost btn-sm" onclick="App.exportData()"><i data-lucide="download"></i> Export</button>

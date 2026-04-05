@@ -408,6 +408,17 @@ const App = {
     }
   },
 
+  // ── Toggle HT/TTC (topbar switch) ───────────────────────────
+  async toggleTTC(isTTC) {
+    db.params.saisie_prix = isTTC ? 'TTC' : 'HT';
+    Params._updateTvaBadge();
+    try {
+      await sbSaveParams(db.params);
+    } catch (err) {
+      console.error(err);
+    }
+  },
+
   // ── Export / Import ──────────────────────────────────────────
   exportData() {
     const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
@@ -635,12 +646,17 @@ const Params = {
   },
 
   _updateTvaBadge() {
-    const el = document.getElementById('tva-badge');
-    if (!el) return;
-    // TVA par article — les montants affichés sont toujours HT
-    el.style.display = 'inline-block';
-    el.textContent = 'HT';
-    el.style.background = '#F3F4F6'; el.style.color = '#6B7280';
+    // Sync le toggle switch dans la topbar
+    const sw = document.getElementById('tva-switch');
+    const lblHt = document.getElementById('tva-lbl-ht');
+    const lblTtc = document.getElementById('tva-lbl-ttc');
+    const isTTC = (db.params.saisie_prix || 'HT') === 'TTC';
+    if (sw) sw.checked = isTTC;
+    if (lblHt) lblHt.classList.toggle('active', !isTTC);
+    if (lblTtc) lblTtc.classList.toggle('active', isTTC);
+    // Sync aussi le select dans paramètres
+    const sel = document.getElementById('p-saisie-prix');
+    if (sel) sel.value = isTTC ? 'TTC' : 'HT';
   },
 
   // ── Types d'événements ────────────────────────────────────
@@ -967,7 +983,7 @@ function _fmtKpi(montant) {
 }
 
 function labelPrix() {
-  return 'HT';
+  return (db.params.saisie_prix || 'HT') === 'TTC' ? 'TTC' : 'HT';
 }
 
 window.prixAffiche = prixAffiche;

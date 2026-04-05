@@ -232,12 +232,16 @@ const Catalogue = (() => {
     const tva  = parseFloat(_getVal('m-mat-tva')) || 0;
     const badge = document.getElementById('m-mat-prix-badge');
     const conv  = document.getElementById('m-mat-conv');
-    if (badge) badge.textContent = 'Prix HT';
+    const lbl = labelPrix();
+    if (badge) badge.textContent = `Prix ${lbl}`;
     if (!conv) return;
     if (!pa || pa <= 0) { conv.textContent = ''; return; }
-    if (!tva) { conv.textContent = '= Prix HT = Prix TTC (pas de TVA)'; return; }
+    if (!tva) { conv.textContent = `= Prix HT = Prix TTC (pas de TVA)`; return; }
     const ttc = (pa * (1 + tva)).toFixed(2);
-    conv.textContent = `= ${ttc} € TTC (TVA ${(tva * 100).toFixed(1).replace('.0', '')}%)`;
+    const ht  = (pa / (1 + tva)).toFixed(2);
+    conv.textContent = lbl === 'HT'
+      ? `= ${ttc} € TTC (TVA ${(tva * 100).toFixed(1).replace('.0', '')}%)`
+      : `= ${ht} € HT (TVA ${(tva * 100).toFixed(1).replace('.0', '')}%)`;
   }
 
   // ── API publique ──────────────────────────────────────────
