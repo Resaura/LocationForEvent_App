@@ -411,9 +411,6 @@ const Devis = (() => {
 
     const totHT = Math.max(0, sousTotal - totalRemisesGlobales);
 
-    _setTxt('nd-tot',  prixAffiche(totHT).toFixed(2) + ' €' + suffix);
-    _setTxt('nd-caut', caut + ' €');
-
     // Remises globales appliquées
     const remEl = document.getElementById('nd-remises-applied');
     if (remEl) {
@@ -436,21 +433,29 @@ const Devis = (() => {
       }
     }
 
-    // TVA détail par taux — basé sur prixNet de chaque ligne
+    // TVA détail complet — toujours visible
     const tvaEl = document.getElementById('nd-tva-detail');
     if (tvaEl) {
       const tvaMap = calcTvaMap(_lines.map(l => ({ ...l, prix: l.prixNet != null ? l.prixNet : l.prix })), totalRemisesGlobales, sousTotal);
       const totalTVA = Object.values(tvaMap).reduce((s, v) => s + v.montantTva, 0);
+
+      tvaEl.style.display = 'block';
+      let html = `<div style="font-size:.78rem;color:var(--text2);line-height:1.9">`;
+      html += `<div class="flex jb"><span>Sous-total HT :</span><span>${totHT.toFixed(2)} €</span></div>`;
       if (totalTVA > 0) {
-        tvaEl.style.display = 'block';
-        const rows = Object.entries(tvaMap)
+        Object.entries(tvaMap)
           .filter(([, v]) => v.montantTva > 0)
-          .map(([taux, v]) => `TVA ${(taux * 100).toFixed(1).replace('.0', '')}% : ${v.montantTva.toFixed(2)} €`)
-          .join(' · ');
-        tvaEl.innerHTML = `${rows} · <strong>TTC : ${(totHT + totalTVA).toFixed(2)} €</strong>`;
+          .sort(([a], [b]) => parseFloat(a) - parseFloat(b))
+          .forEach(([taux, v]) => {
+            html += `<div class="flex jb" style="color:var(--text3)"><span>TVA ${(taux * 100).toFixed(1).replace('.0', '')}% :</span><span>${v.montantTva.toFixed(2)} €</span></div>`;
+          });
+        html += `<div class="flex jb" style="font-weight:700;color:var(--text);border-top:1px solid var(--border);padding-top:4px;margin-top:2px"><span>Total TTC :</span><span>${(totHT + totalTVA).toFixed(2)} €</span></div>`;
       } else {
-        tvaEl.style.display = 'none';
+        html += `<div class="flex jb" style="font-weight:700;color:var(--text);border-top:1px solid var(--border);padding-top:4px;margin-top:2px"><span>Total TTC :</span><span>${totHT.toFixed(2)} €</span></div>`;
       }
+      html += `<div class="flex jb" style="color:var(--text3)"><span>Caution estimée :</span><span>${caut} €</span></div>`;
+      html += `</div>`;
+      tvaEl.innerHTML = html;
     }
 
     const livEl = document.getElementById('nd-liv');

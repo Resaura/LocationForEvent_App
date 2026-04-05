@@ -72,6 +72,15 @@ const Simulateur = (() => {
     if (drop)  drop.classList.remove('open');
     if (paEl && item.pa) paEl.value = item.pa;
 
+    // Afficher indicateur HT/TTC de l'article
+    const infoEl = document.getElementById('sim-item-info');
+    if (infoEl) {
+      const tva = item.tva || 0;
+      const tvaPct = tva ? `TVA ${(tva * 100).toFixed(1).replace('.0', '')}%` : 'Sans TVA';
+      infoEl.style.display = 'block';
+      infoEl.innerHTML = `<span class="badge bg-blue" style="font-size:.62rem">Prix HT</span> ${item.pa ? item.pa.toLocaleString('fr-FR') + ' €' : '—'} · <span style="color:var(--text3)">${tvaPct}</span>`;
+    }
+
     _calc();
   }
 
@@ -90,14 +99,17 @@ const Simulateur = (() => {
     const durations = ['jour', 'weekend', 'semaine', '2s', '3s', 'mois'];
     const labels    = ['1 Jour', 'Week-end', 'Semaine', '2 Semaines', '3 Semaines', 'Mois'];
 
+    const tva = _selItem?.tva || 0;
     const cells = durations.map((d, i) => {
-      const r = calc ? null : null; // use global calc
       const result = window.calc ? window.calc(pa, d, qty) : null;
       if (!result) return `<div class="sim-box"><div class="sim-lbl">${labels[i]}</div><div class="sim-val" style="font-size:.9rem;color:rgba(255,255,255,.3)">—</div></div>`;
       const isMain = d === 'weekend';
+      const prixHT = result.disp;
+      const ttcLine = tva ? `<div class="sim-sub">${(prixHT * (1 + tva)).toFixed(2)} € TTC</div>` : '';
       return `<div class="sim-box">
         <div class="sim-lbl">${labels[i]}</div>
-        <div class="sim-val${isMain ? ' gold' : ''}">${result.disp.toFixed(2)} €</div>
+        <div class="sim-val${isMain ? ' gold' : ''}">${prixHT.toFixed(2)} € <span style="font-size:.55rem;font-weight:400;opacity:.6">HT</span></div>
+        ${ttcLine}
         <div class="sim-sub">Caution : ${result.caut} €</div>
       </div>`;
     });
@@ -117,6 +129,8 @@ const Simulateur = (() => {
     if (res) res.style.display = 'none';
     const drop = document.getElementById('sim-drop');
     if (drop) drop.classList.remove('open');
+    const info = document.getElementById('sim-item-info');
+    if (info) info.style.display = 'none';
   }
 
   // ── Créer un devis depuis le simulateur ───────────────────

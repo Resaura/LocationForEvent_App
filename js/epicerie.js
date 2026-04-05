@@ -179,6 +179,7 @@ const Epicerie = (() => {
     }
 
     App.openModal('m-epi');
+    showConversion();
   }
 
   // ── Enregistrer ───────────────────────────────────────────
@@ -260,6 +261,22 @@ const Epicerie = (() => {
     _renderList();
   }
 
-  return { render, openModal, save, del, toggle, setFilter, filter, seedDefaults };
+  // ── Conversion HT/TTC ─────────────────────────────────────
+  function showConversion() {
+    const prix = parseFloat(document.getElementById('m-epi-prix')?.value);
+    const tva  = parseFloat(document.getElementById('m-epi-tva')?.value) || 0;
+    const badge = document.getElementById('m-epi-prix-badge');
+    const tvaBadge = document.getElementById('m-epi-tva-badge');
+    const conv  = document.getElementById('m-epi-conv');
+    if (badge) badge.textContent = 'Prix HT';
+    if (tvaBadge) tvaBadge.textContent = '';
+    if (!conv) return;
+    if (!prix || prix <= 0) { conv.textContent = ''; return; }
+    if (!tva) { conv.textContent = '= Prix HT = Prix TTC (pas de TVA)'; return; }
+    const ttc = (prix * (1 + tva)).toFixed(2);
+    conv.textContent = `= ${ttc} € TTC (TVA ${(tva * 100).toFixed(1).replace('.0', '')}%)`;
+  }
+
+  return { render, openModal, save, del, toggle, setFilter, filter, showConversion, seedDefaults };
 })();
 window.Epicerie = Epicerie;

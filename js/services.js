@@ -161,6 +161,7 @@ const Services = (() => {
     }
 
     App.openModal('m-svc');
+    setTimeout(() => showConversion(), 50);
   }
 
   // ── Ajouter une ligne d'option dans la modale ─────────────
@@ -288,6 +289,23 @@ const Services = (() => {
     _renderList();
   }
 
-  return { render, openModal, addOption, removeOption, save, del, seedDefaults };
+  // ── Conversion HT/TTC ─────────────────────────────────────
+  function showConversion() {
+    const tva  = parseFloat(document.getElementById('m-svc-tva')?.value) || 0;
+    const badge = document.getElementById('m-svc-prix-badge');
+    const conv  = document.getElementById('m-svc-conv');
+    if (badge) badge.textContent = 'Prix HT';
+    if (!conv) return;
+    // Calculer total des options fixes
+    const opts = _readOpts();
+    const totalFixe = opts.filter(o => o.type === 'fixe').reduce((s, o) => s + o.prix, 0);
+    if (!totalFixe || !tva) {
+      conv.textContent = !tva ? 'Pas de TVA appliquée' : '';
+      return;
+    }
+    conv.textContent = `Total options fixes : ${totalFixe.toFixed(2)} € HT = ${(totalFixe * (1 + tva)).toFixed(2)} € TTC`;
+  }
+
+  return { render, openModal, addOption, removeOption, showConversion, save, del, seedDefaults };
 })();
 window.Services = Services;

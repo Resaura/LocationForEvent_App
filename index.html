@@ -276,6 +276,7 @@
                     <div class="autocomplete-drop" id="sim-drop"></div>
                   </div>
                 </div>
+                <div id="sim-item-info" style="display:none;font-size:.78rem;margin-bottom:8px;padding:6px 10px;background:var(--blue-ll);border-radius:var(--r-sm)"></div>
                 <div class="r2">
                   <div class="fg">
                     <label class="fl">Prix d'achat (€)</label>
@@ -440,15 +441,7 @@
                     </select>
                     <button class="btn btn-ghost btn-sm" onclick="Devis.addRemise()" style="white-space:nowrap"><i data-lucide="tag"></i> Appliquer</button>
                   </div>
-                  <div class="dv-total-row">
-                    <span>Total HT</span>
-                    <span id="nd-tot">0,00 €</span>
-                  </div>
-                  <div id="nd-tva-detail" style="display:none;text-align:right;font-size:.78rem;color:var(--grey);margin-top:4px"></div>
-                  <div class="flex jb text-sm mt-2">
-                    <span>Caution estimée</span>
-                    <span id="nd-caut">0 €</span>
-                  </div>
+                  <div id="nd-tva-detail" style="margin-top:4px"></div>
                   <div class="liv-box" id="nd-liv" style="display:none">
                     <div class="liv-row"><span>Livraison aller</span><span id="nd-al"></span></div>
                     <div class="liv-row"><span>Retour (si récup.)</span><span id="nd-ret"></span></div>
@@ -855,12 +848,13 @@
       </div>
       <div class="r2">
         <div class="fg">
-          <label class="fl">Prix d'achat (€)</label>
-          <input type="number" id="m-mat-pa" placeholder="Ex: 350" oninput="Catalogue.previewPrix()">
+          <label class="fl">Prix d'achat (€) <span id="m-mat-prix-badge" class="badge bg-grey" style="font-size:.58rem;vertical-align:middle;margin-left:4px"></span></label>
+          <input type="number" id="m-mat-pa" placeholder="Ex: 350" oninput="Catalogue.previewPrix();Catalogue.showConversion()">
+          <div id="m-mat-conv" style="font-size:.72rem;color:var(--text3);margin-top:3px"></div>
         </div>
         <div class="fg">
           <label class="fl">TVA applicable</label>
-          <select id="m-mat-tva">
+          <select id="m-mat-tva" onchange="Catalogue.showConversion()">
             <option value="0">Aucune (0%)</option>
             <option value="0.055">5,5%</option>
             <option value="0.10">10%</option>
@@ -990,13 +984,14 @@
         </div>
       </div>
       <div class="fg">
-        <label class="fl">TVA applicable</label>
-        <select id="m-svc-tva">
+        <label class="fl">TVA applicable <span id="m-svc-prix-badge" class="badge bg-grey" style="font-size:.58rem;vertical-align:middle;margin-left:4px"></span></label>
+        <select id="m-svc-tva" onchange="Services.showConversion()">
           <option value="0">Aucune (0%)</option>
           <option value="0.055">5,5%</option>
           <option value="0.10">10%</option>
           <option value="0.20" selected>20%</option>
         </select>
+        <div id="m-svc-conv" style="font-size:.72rem;color:var(--text3);margin-top:3px"></div>
       </div>
       <div class="sep"></div>
       <div class="flex jb items-c mb-3">
@@ -1074,8 +1069,8 @@
       <div class="fg"><label class="fl">Nom *</label><input type="text" id="m-epi-nom" placeholder="Ex: Huile tournesol 5L"></div>
       <div class="r2">
         <div class="fg">
-          <label class="fl">Prix unitaire (€)</label>
-          <input type="number" id="m-epi-prix" placeholder="0.00" step="0.01" min="0">
+          <label class="fl">Prix unitaire (€) <span id="m-epi-prix-badge" class="badge bg-grey" style="font-size:.58rem;vertical-align:middle;margin-left:4px"></span></label>
+          <input type="number" id="m-epi-prix" placeholder="0.00" step="0.01" min="0" oninput="Epicerie.showConversion()">
         </div>
         <div class="fg">
           <label class="fl">Unité</label>
@@ -1113,13 +1108,14 @@
         </div>
       </div>
       <div class="fg">
-        <label class="fl">TVA applicable</label>
-        <select id="m-epi-tva">
+        <label class="fl">TVA applicable <span id="m-epi-tva-badge" class="badge bg-grey" style="font-size:.58rem;vertical-align:middle;margin-left:4px"></span></label>
+        <select id="m-epi-tva" onchange="Epicerie.showConversion()">
           <option value="0">Aucune (0%)</option>
           <option value="0.055" selected>5,5%</option>
           <option value="0.10">10%</option>
           <option value="0.20">20%</option>
         </select>
+        <div id="m-epi-conv" style="font-size:.72rem;color:var(--text3);margin-top:3px"></div>
       </div>
       <div class="fg">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.84rem">

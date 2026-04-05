@@ -107,10 +107,12 @@ const Catalogue = (() => {
       _setVal('m-mat-tva',    item.tva != null ? String(item.tva) : '0');
       _setVal('m-mat-notes',  item.notes || '');
       previewPrix();
+      showConversion();
     } else {
       ['m-mat-nom', 'm-mat-pa', 'm-mat-notes'].forEach(x => _setVal(x, ''));
       _setVal('m-mat-statut', 'owned');
       _setVal('m-mat-tva', '0');
+      showConversion();
     }
 
     App.openModal('m-mat');
@@ -224,7 +226,21 @@ const Catalogue = (() => {
     if (el) el.value = val;
   }
 
+  // ── Conversion HT/TTC ─────────────────────────────────────
+  function showConversion() {
+    const pa   = parseFloat(_getVal('m-mat-pa'));
+    const tva  = parseFloat(_getVal('m-mat-tva')) || 0;
+    const badge = document.getElementById('m-mat-prix-badge');
+    const conv  = document.getElementById('m-mat-conv');
+    if (badge) badge.textContent = 'Prix HT';
+    if (!conv) return;
+    if (!pa || pa <= 0) { conv.textContent = ''; return; }
+    if (!tva) { conv.textContent = '= Prix HT = Prix TTC (pas de TVA)'; return; }
+    const ttc = (pa * (1 + tva)).toFixed(2);
+    conv.textContent = `= ${ttc} € TTC (TVA ${(tva * 100).toFixed(1).replace('.0', '')}%)`;
+  }
+
   // ── API publique ──────────────────────────────────────────
-  return { render, filter, setFilter, openModal, previewPrix, save, del, exportCsv };
+  return { render, filter, setFilter, openModal, previewPrix, showConversion, save, del, exportCsv };
 })();
 window.Catalogue = Catalogue;
