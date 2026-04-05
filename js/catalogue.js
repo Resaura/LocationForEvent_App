@@ -141,12 +141,14 @@ const Catalogue = (() => {
     if (!nom) { App.toast('Le nom est requis', 'err'); return; }
 
     const id   = parseInt(_getVal('m-mat-id')) || null;
+    const tvaRaw = _getVal('m-mat-tva');
+    const tvaVal = parseFloat(tvaRaw);
     const data = {
       name:  nom,
       pa:    parseFloat(_getVal('m-mat-pa'))     || null,
       cat:   _getVal('m-mat-cat')                || 'Autre',
       owned: _getVal('m-mat-statut') === 'owned',
-      tva:   parseFloat(_getVal('m-mat-tva'))    || 0,
+      tva:   isNaN(tvaVal) ? 0 : tvaVal,
       notes: _getVal('m-mat-notes').trim()
     };
 
@@ -154,23 +156,22 @@ const Catalogue = (() => {
     if (id) {
       const idx = db.cat.findIndex(i => i.id === id);
       if (idx >= 0) { db.cat[idx] = { ...db.cat[idx], ...data }; item = db.cat[idx]; }
+      else { App.toast('Matériel introuvable', 'err'); return; }
     } else {
       item = { ...data };
       db.cat.push(item);
     }
 
     try {
-      await Promise.all([
-        sbUpsertMat(item),
-        sbSaveMeta(db.ndv, db.nid)
-      ]);
+      await sbUpsertMat(item);
+      await sbSaveMeta(db.ndv, db.nid);
       App.closeModal('m-mat');
       render();
       App.updateBadges();
       App.toast('Matériel sauvegardé ✅', 'ok');
     } catch (err) {
-      console.error(err);
-      App.toast('Erreur de sauvegarde', 'err');
+      console.error('Erreur sauvegarde matériel:', err, 'Data envoyée:', JSON.stringify(data));
+      App.toast('Erreur de sauvegarde : ' + (err.message || err), 'err');
     }
   }
 

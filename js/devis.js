@@ -245,7 +245,8 @@ const Devis = (() => {
     let base = l.prix;
     for (const r of l.remises) {
       if (r.type === 'pourcentage') {
-        r.montant_deduit = arrondi(base * r.valeur / 100);
+        // Arrondi au centime (pas au 0,50€) pour les remises
+        r.montant_deduit = Math.round(base * r.valeur / 100 * 100) / 100;
       } else {
         r.montant_deduit = Math.min(r.valeur, base);
       }
