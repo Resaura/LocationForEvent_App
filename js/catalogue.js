@@ -158,12 +158,12 @@ const Catalogue = (() => {
       if (idx >= 0) { db.cat[idx] = { ...db.cat[idx], ...data }; item = db.cat[idx]; }
       else { App.toast('Matériel introuvable', 'err'); return; }
     } else {
-      item = { id: Date.now(), ...data };
+      item = { ...data };
       db.cat.push(item);
     }
 
     try {
-      await sbUpsertMat(item, !id);
+      await sbUpsertMat(item);
       App.closeModal('m-mat');
       render();
       App.updateBadges();
