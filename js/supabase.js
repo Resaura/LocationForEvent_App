@@ -113,16 +113,16 @@ async function sbLoad() {
 }
 
 // ─── MATERIEL ────────────────────────────────────────────────────
-async function sbUpsertMat(item) {
-  if (item.id) {
+async function sbUpsertMat(item, isNew) {
+  if (!isNew && item.id) {
+    // UPDATE existant
     const { id, ...data } = item;
     const { error } = await sb.from('materiel').update(data).eq('id', id);
     if (error) throw error;
   } else {
-    const { id: _, ...data } = item;
-    const { data: row, error } = await sb.from('materiel').insert(data).select('id').single();
+    // INSERT — id généré côté client (Date.now())
+    const { error } = await sb.from('materiel').insert(item);
     if (error) throw error;
-    item.id = row.id;
   }
 }
 
