@@ -496,15 +496,7 @@ const Devis = (() => {
     }
 
     const livEl = document.getElementById('nd-liv');
-    if (livEl) {
-      if (km > 0) {
-        livEl.style.display = 'block';
-        _setTxt('nd-al',  (km * kmt).toFixed(2) + ' €');
-        _setTxt('nd-ret', (km * kmt).toFixed(2) + ' €');
-      } else {
-        livEl.style.display = 'none';
-      }
-    }
+    if (livEl) livEl.style.display = 'none';
 
     // Re-calculer les prix par_km si un service est sélectionné
     if (_getVal('nd-svc-sel')) updateServiceOptions();
@@ -1406,6 +1398,7 @@ const Historique = (() => {
         <button class="btn btn-gold btn-sm" onclick="Print.downloadPdf(db.devis.find(d=>d.id===${dv.id}))"><i data-lucide="download"></i> Télécharger</button>
         <button class="btn btn-purple btn-sm" onclick="Historique.emailAndSetSent(${dv.id})"><i data-lucide="mail"></i> Email</button>
         ${statut === 'accepté' ? `<button class="btn btn-primary btn-sm" onclick="App.closeModal('m-dv');Paiements.openModal(${dv.id})"><i data-lucide="credit-card"></i> Paiement</button>` : ''}
+        ${statut === 'accepté' ? `<button class="btn btn-ghost btn-sm" onclick="Print.printContrat(db.devis.find(d=>d.id===${dv.id}))"><i data-lucide="file-text"></i> Contrat</button>` : ''}
         ${needsRelance(dv) ? `<button class="btn btn-gold btn-sm" onclick="App.closeModal('m-dv');Historique.relancer(${dv.id})"><i data-lucide="bell"></i> Relancer</button>` : ''}
         <button class="btn btn-ghost btn-sm" onclick="Devis.edit(${dv.id});App.closeModal('m-dv')"><i data-lucide="pencil"></i> Modifier</button>
         <button class="btn btn-danger btn-sm" onclick="Historique.del(${dv.id})"><i data-lucide="trash-2"></i> Supprimer</button>
