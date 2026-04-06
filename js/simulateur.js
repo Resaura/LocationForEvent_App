@@ -76,10 +76,10 @@ const Simulateur = (() => {
     const infoEl = document.getElementById('sim-item-info');
     if (infoEl) {
       const tva = item.tva || 0;
-      const lbl = labelPrix();
       const tvaPct = tva ? `TVA ${(tva * 100).toFixed(1).replace('.0', '')}%` : 'Sans TVA';
+      const ttcInfo = item.pa_ttc ? ` / ${item.pa_ttc.toLocaleString('fr-FR')} € TTC` : '';
       infoEl.style.display = 'block';
-      infoEl.innerHTML = `<span class="badge bg-blue" style="font-size:.62rem">Prix ${lbl}</span> ${item.pa ? item.pa.toLocaleString('fr-FR') + ' €' : '—'} · <span style="color:var(--text3)">${tvaPct}</span>`;
+      infoEl.innerHTML = `${item.pa ? item.pa.toLocaleString('fr-FR') + ' € HT' + ttcInfo : '—'} · <span style="color:var(--text3)">${tvaPct}</span>`;
     }
 
     _calc();

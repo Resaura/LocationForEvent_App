@@ -161,7 +161,7 @@ const Services = (() => {
     }
 
     App.openModal('m-svc');
-    setTimeout(() => showConversion(), 50);
+    setTimeout(() => syncTVA(), 50);
   }
 
   // ── Ajouter une ligne d'option dans la modale ─────────────
@@ -289,26 +289,20 @@ const Services = (() => {
     _renderList();
   }
 
-  // ── Conversion HT/TTC ─────────────────────────────────────
-  function showConversion() {
+  // ── Sync TVA — affiche conversion HT↔TTC ──────────────────
+  function syncTVA() {
     const tva  = parseFloat(document.getElementById('m-svc-tva')?.value) || 0;
-    const badge = document.getElementById('m-svc-prix-badge');
-    const conv  = document.getElementById('m-svc-conv');
-    const lbl = labelPrix();
-    if (badge) badge.textContent = `Prix ${lbl}`;
+    const conv = document.getElementById('m-svc-conv');
     if (!conv) return;
-    // Calculer total des options fixes
     const opts = _readOpts();
     const totalFixe = opts.filter(o => o.type === 'fixe').reduce((s, o) => s + o.prix, 0);
     if (!totalFixe || !tva) {
       conv.textContent = !tva ? 'Pas de TVA appliquée' : '';
       return;
     }
-    conv.textContent = lbl === 'HT'
-      ? `Total options fixes : ${totalFixe.toFixed(2)} € HT = ${(totalFixe * (1 + tva)).toFixed(2)} € TTC`
-      : `Total options fixes : ${totalFixe.toFixed(2)} € TTC = ${(totalFixe / (1 + tva)).toFixed(2)} € HT`;
+    conv.textContent = `Total options fixes : ${totalFixe.toFixed(2)} € HT = ${(totalFixe * (1 + tva)).toFixed(2)} € TTC`;
   }
 
-  return { render, openModal, addOption, removeOption, showConversion, save, del, seedDefaults };
+  return { render, openModal, addOption, removeOption, syncTVA, save, del, seedDefaults };
 })();
 window.Services = Services;

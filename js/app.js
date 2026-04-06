@@ -408,17 +408,6 @@ const App = {
     }
   },
 
-  // ── Toggle HT/TTC (topbar switch) ───────────────────────────
-  async toggleTTC(isTTC) {
-    db.params.saisie_prix = isTTC ? 'TTC' : 'HT';
-    Params._updateTvaBadge();
-    try {
-      await sbSaveParams(db.params);
-    } catch (err) {
-      console.error(err);
-    }
-  },
-
   // ── Export / Import ──────────────────────────────────────────
   exportData() {
     const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
@@ -611,9 +600,6 @@ const Params = {
     set('p-km',       p.km ?? 1.5);
     set('p-valid',    p.valid ?? 30);
     set('p-mentions', p.mentions);
-    // TVA par article
-    set('p-saisie-prix', p.saisie_prix || 'HT');
-    Params._updateTvaBadge();
     Params.renderTypes();
     if (typeof Remises !== 'undefined') Remises.renderList();
     Params._renderDesignFields();
@@ -632,31 +618,15 @@ const Params = {
       km:       parseFloat(get('p-km'))   || 1.5,
       valid:    parseInt(get('p-valid'))  || 30,
       mentions: get('p-mentions'),
-      saisie_prix:  get('p-saisie-prix') || 'HT',
       design:       prevDesign,
     };
     try {
       await sbSaveParams(db.params);
-      Params._updateTvaBadge();
       App.toast('Paramètres sauvegardés ✅', 'ok');
     } catch (err) {
       console.error(err);
       App.toast('Erreur sauvegarde', 'err');
     }
-  },
-
-  _updateTvaBadge() {
-    // Sync le toggle switch dans la topbar
-    const sw = document.getElementById('tva-switch');
-    const lblHt = document.getElementById('tva-lbl-ht');
-    const lblTtc = document.getElementById('tva-lbl-ttc');
-    const isTTC = (db.params.saisie_prix || 'HT') === 'TTC';
-    if (sw) sw.checked = isTTC;
-    if (lblHt) lblHt.classList.toggle('active', !isTTC);
-    if (lblTtc) lblTtc.classList.toggle('active', isTTC);
-    // Sync aussi le select dans paramètres
-    const sel = document.getElementById('p-saisie-prix');
-    if (sel) sel.value = isTTC ? 'TTC' : 'HT';
   },
 
   // ── Types d'événements ────────────────────────────────────
@@ -926,15 +896,12 @@ function arrondi(val) {
 }
 
 // Calcul du prix selon la table d'amortissement
-// pa = prix d'achat tel que saisi, tva = taux TVA article (0.20 etc.), saisie = 'HT'|'TTC'
+// pa = prix d'achat HT, tva = taux TVA article (0.20 etc.)
 // Retourne { jour, unit, disp, prixHT, prixTTC, caut, tva } ou null
-function calc(pa, dur, qty = 1, tva = 0, saisie = null) {
+function calc(pa, dur, qty = 1, tva = 0) {
   if (!pa || pa <= 0) return null;
 
-  // Convertir en HT si saisi en TTC
-  const modeSaisie = saisie || db.params.saisie_prix || 'HT';
-  const paHT = (modeSaisie === 'TTC' && tva > 0) ? pa / (1 + tva) : pa;
-
+  const paHT = pa;
   const rule = db.amort.find(r => paHT >= r.min && paHT < r.max);
   if (!rule) return null;
 
@@ -993,7 +960,7 @@ function _fmtKpi(montant) {
 }
 
 function labelPrix() {
-  return (db.params.saisie_prix || 'HT') === 'TTC' ? 'TTC' : 'HT';
+  return 'HT';
 }
 
 window.prixAffiche = prixAffiche;

@@ -46,9 +46,10 @@ const Catalogue = (() => {
 
     tbody.innerHTML = items.map(i => {
       const prix = i.pa ? calc(i.pa, 'jour') : null;
+      const ttcDisp = i.pa_ttc ? ` <span class="text-sm" style="color:var(--grey)">(${i.pa_ttc.toLocaleString('fr-FR')} € TTC)</span>` : '';
       const prixDisp = i.pa
-        ? `<span style="font-weight:600;color:var(--navy)">${i.pa.toLocaleString('fr-FR')} €</span>
-           ${prix ? `<br><span class="text-sm">Jour : ${prix.unit.toFixed(2)} €</span>` : ''}`
+        ? `<span style="font-weight:600;color:var(--navy)">${i.pa.toLocaleString('fr-FR')} € HT</span>${ttcDisp}
+           ${prix ? `<br><span class="text-sm">Jour : ${prix.unit.toFixed(2)} € HT</span>` : ''}`
         : '<span class="text-sm">—</span>';
 
       const tvaLabel = i.tva ? `${(i.tva * 100).toFixed(1).replace('.0', '')} %` : '—';
@@ -101,25 +102,29 @@ const Catalogue = (() => {
       const item = db.cat.find(x => x.id === id);
       if (!item) return;
       _setVal('m-mat-nom',    item.name);
-      _setVal('m-mat-pa',     item.pa || '');
       _setVal('m-mat-cat',    item.cat);
       _setVal('m-mat-statut', item.owned ? 'owned' : 'future');
       _setVal('m-mat-tva',    item.tva != null ? String(item.tva) : '0');
       _setVal('m-mat-notes',  item.notes || '');
+      _setVal('m-mat-pa-ht',  item.pa || '');
+      _setVal('m-mat-pa-ttc', item.pa_ttc || '');
+      // Si pa_ttc absent, recalculer
+      if (item.pa && !item.pa_ttc) {
+        const tva = item.tva || 0;
+        _setVal('m-mat-pa-ttc', tva > 0 ? (item.pa * (1 + tva)).toFixed(2) : item.pa);
+      }
       previewPrix();
-      showConversion();
     } else {
-      ['m-mat-nom', 'm-mat-pa', 'm-mat-notes'].forEach(x => _setVal(x, ''));
+      ['m-mat-nom', 'm-mat-pa-ht', 'm-mat-pa-ttc', 'm-mat-notes'].forEach(x => _setVal(x, ''));
       _setVal('m-mat-statut', 'owned');
       _setVal('m-mat-tva', '0');
-      showConversion();
     }
 
     App.openModal('m-mat');
   }
 
   function previewPrix() {
-    const pa  = parseFloat(_getVal('m-mat-pa'));
+    const pa  = parseFloat(_getVal('m-mat-pa-ht'));
     const el  = document.getElementById('m-mat-prev');
     if (!el) return;
     if (!pa || pa <= 0) { el.style.display = 'none'; return; }
@@ -145,12 +150,13 @@ const Catalogue = (() => {
     const tvaRaw = _getVal('m-mat-tva');
     const tvaVal = parseFloat(tvaRaw);
     const data = {
-      name:  nom,
-      pa:    parseFloat(_getVal('m-mat-pa'))     || null,
-      cat:   _getVal('m-mat-cat')                || 'Autre',
-      owned: _getVal('m-mat-statut') === 'owned',
-      tva:   isNaN(tvaVal) ? 0 : tvaVal,
-      notes: _getVal('m-mat-notes').trim()
+      name:   nom,
+      pa:     parseFloat(_getVal('m-mat-pa-ht'))  || null,
+      pa_ttc: parseFloat(_getVal('m-mat-pa-ttc')) || null,
+      cat:    _getVal('m-mat-cat')                || 'Autre',
+      owned:  _getVal('m-mat-statut') === 'owned',
+      tva:    isNaN(tvaVal) ? 0 : tvaVal,
+      notes:  _getVal('m-mat-notes').trim()
     };
 
     let item;
@@ -227,25 +233,36 @@ const Catalogue = (() => {
     if (el) el.value = val;
   }
 
-  // ── Conversion HT/TTC ─────────────────────────────────────
-  function showConversion() {
-    const pa   = parseFloat(_getVal('m-mat-pa'));
-    const tva  = parseFloat(_getVal('m-mat-tva')) || 0;
-    const badge = document.getElementById('m-mat-prix-badge');
-    const conv  = document.getElementById('m-mat-conv');
-    const lbl = labelPrix();
-    if (badge) badge.textContent = `Prix ${lbl}`;
-    if (!conv) return;
-    if (!pa || pa <= 0) { conv.textContent = ''; return; }
-    if (!tva) { conv.textContent = `= Prix HT = Prix TTC (pas de TVA)`; return; }
-    const ttc = (pa * (1 + tva)).toFixed(2);
-    const ht  = (pa / (1 + tva)).toFixed(2);
-    conv.textContent = lbl === 'HT'
-      ? `= ${ttc} € TTC (TVA ${(tva * 100).toFixed(1).replace('.0', '')}%)`
-      : `= ${ht} € HT (TVA ${(tva * 100).toFixed(1).replace('.0', '')}%)`;
+  // ── Sync HT ↔ TTC ─────────────────────────────────────────
+  function syncPrix(dir) {
+    const tva = parseFloat(_getVal('m-mat-tva')) || 0;
+    if (dir === 'ht') {
+      const ht = parseFloat(_getVal('m-mat-pa-ht'));
+      if (!isNaN(ht) && ht >= 0) {
+        const ttc = tva > 0 ? (ht * (1 + tva)) : ht;
+        _setVal('m-mat-pa-ttc', ttc.toFixed(2));
+      }
+    } else {
+      const ttc = parseFloat(_getVal('m-mat-pa-ttc'));
+      if (!isNaN(ttc) && ttc >= 0) {
+        const ht = tva > 0 ? (ttc / (1 + tva)) : ttc;
+        _setVal('m-mat-pa-ht', ht.toFixed(2));
+      }
+    }
+    previewPrix();
+  }
+
+  function syncTVA() {
+    const ht = parseFloat(_getVal('m-mat-pa-ht'));
+    if (!isNaN(ht) && ht > 0) {
+      const tva = parseFloat(_getVal('m-mat-tva')) || 0;
+      const ttc = tva > 0 ? (ht * (1 + tva)) : ht;
+      _setVal('m-mat-pa-ttc', ttc.toFixed(2));
+    }
+    previewPrix();
   }
 
   // ── API publique ──────────────────────────────────────────
-  return { render, filter, setFilter, openModal, previewPrix, showConversion, save, del, exportCsv };
+  return { render, filter, setFilter, openModal, previewPrix, syncPrix, syncTVA, save, del, exportCsv };
 })();
 window.Catalogue = Catalogue;

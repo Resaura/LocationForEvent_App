@@ -119,16 +119,7 @@
         </button>
         <div class="topbar-title" id="top-title">Tableau de bord</div>
       </div>
-      <div class="topbar-center no-print">
-        <div class="tva-toggle" id="tva-toggle">
-          <span class="tva-toggle-label tva-label-ht active" id="tva-lbl-ht">HT</span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="tva-switch" onchange="App.toggleTTC(this.checked)">
-            <span class="toggle-slider"></span>
-          </label>
-          <span class="tva-toggle-label tva-label-ttc" id="tva-lbl-ttc">TTC</span>
-        </div>
-      </div>
+      <div class="topbar-center no-print"></div>
       <div class="topbar-right no-print">
         <button class="btn btn-ghost btn-sm" onclick="App.exportData()"><i data-lucide="download"></i> Export</button>
         <label class="btn btn-ghost btn-sm" style="cursor:pointer">
@@ -690,18 +681,10 @@
             <div class="card mb-3">
               <div class="card-hd"><div class="card-title"><i data-lucide="receipt"></i> TVA</div></div>
               <div class="card-bd">
-                <div class="fg">
-                  <label class="fl">Mode de saisie des prix</label>
-                  <select id="p-saisie-prix">
-                    <option value="HT">Prix saisis en HT</option>
-                    <option value="TTC">Prix saisis en TTC</option>
-                  </select>
-                </div>
                 <div style="font-size:.72rem;color:var(--grey);margin-top:6px">
                   La TVA est gérée par article (matériel, service, épicerie). Chaque article a son propre taux de TVA.
-                  Les montants dans l'app sont affichés en HT. La TVA est détaillée par taux sur les devis et factures.
+                  Les prix sont saisis en HT et TTC simultanément. La TVA est détaillée par taux sur les devis et factures.
                 </div>
-                <button class="btn btn-primary fw mt-2" onclick="Params.save()"><i data-lucide="save"></i> Sauvegarder</button>
               </div>
             </div>
             <div class="card mb-3">
@@ -856,20 +839,23 @@
           </select>
         </div>
       </div>
+      <div class="fg">
+        <label class="fl">TVA applicable</label>
+        <select id="m-mat-tva" onchange="Catalogue.syncTVA()">
+          <option value="0">Aucune (0%)</option>
+          <option value="0.055">5,5%</option>
+          <option value="0.10">10%</option>
+          <option value="0.20">20%</option>
+        </select>
+      </div>
       <div class="r2">
         <div class="fg">
-          <label class="fl">Prix d'achat (€) <span id="m-mat-prix-badge" class="badge bg-grey" style="font-size:.58rem;vertical-align:middle;margin-left:4px"></span></label>
-          <input type="number" id="m-mat-pa" placeholder="Ex: 350" oninput="Catalogue.previewPrix();Catalogue.showConversion()">
-          <div id="m-mat-conv" style="font-size:.72rem;color:var(--text3);margin-top:3px"></div>
+          <label class="fl">Prix d'achat HT (€)</label>
+          <input type="number" id="m-mat-pa-ht" placeholder="Ex: 350" step="0.01" min="0" oninput="Catalogue.syncPrix('ht')">
         </div>
         <div class="fg">
-          <label class="fl">TVA applicable</label>
-          <select id="m-mat-tva" onchange="Catalogue.showConversion()">
-            <option value="0">Aucune (0%)</option>
-            <option value="0.055">5,5%</option>
-            <option value="0.10">10%</option>
-            <option value="0.20">20%</option>
-          </select>
+          <label class="fl">Prix d'achat TTC (€)</label>
+          <input type="number" id="m-mat-pa-ttc" placeholder="Ex: 420" step="0.01" min="0" oninput="Catalogue.syncPrix('ttc')">
         </div>
       </div>
       <div class="info" id="m-mat-prev" style="display:none"></div>
@@ -994,8 +980,8 @@
         </div>
       </div>
       <div class="fg">
-        <label class="fl">TVA applicable <span id="m-svc-prix-badge" class="badge bg-grey" style="font-size:.58rem;vertical-align:middle;margin-left:4px"></span></label>
-        <select id="m-svc-tva" onchange="Services.showConversion()">
+        <label class="fl">TVA applicable</label>
+        <select id="m-svc-tva" onchange="Services.syncTVA()">
           <option value="0">Aucune (0%)</option>
           <option value="0.055">5,5%</option>
           <option value="0.10">10%</option>
@@ -1077,24 +1063,18 @@
     <div class="modal-bd">
       <input type="hidden" id="m-epi-id">
       <div class="fg"><label class="fl">Nom *</label><input type="text" id="m-epi-nom" placeholder="Ex: Huile tournesol 5L"></div>
-      <div class="r2">
-        <div class="fg">
-          <label class="fl">Prix unitaire (€) <span id="m-epi-prix-badge" class="badge bg-grey" style="font-size:.58rem;vertical-align:middle;margin-left:4px"></span></label>
-          <input type="number" id="m-epi-prix" placeholder="0.00" step="0.01" min="0" oninput="Epicerie.showConversion()">
-        </div>
-        <div class="fg">
-          <label class="fl">Unité</label>
-          <select id="m-epi-unite">
-            <option value="unité">Unité</option>
-            <option value="kg">kg</option>
-            <option value="L">L</option>
-            <option value="bidon">Bidon</option>
-            <option value="pot">Pot</option>
-            <option value="sachet">Sachet</option>
-            <option value="bouteille">Bouteille</option>
-            <option value="paquet">Paquet</option>
-          </select>
-        </div>
+      <div class="fg">
+        <label class="fl">Unité</label>
+        <select id="m-epi-unite">
+          <option value="unité">Unité</option>
+          <option value="kg">kg</option>
+          <option value="L">L</option>
+          <option value="bidon">Bidon</option>
+          <option value="pot">Pot</option>
+          <option value="sachet">Sachet</option>
+          <option value="bouteille">Bouteille</option>
+          <option value="paquet">Paquet</option>
+        </select>
       </div>
       <div class="r2">
         <div class="fg">
@@ -1118,14 +1098,23 @@
         </div>
       </div>
       <div class="fg">
-        <label class="fl">TVA applicable <span id="m-epi-tva-badge" class="badge bg-grey" style="font-size:.58rem;vertical-align:middle;margin-left:4px"></span></label>
-        <select id="m-epi-tva" onchange="Epicerie.showConversion()">
+        <label class="fl">TVA applicable</label>
+        <select id="m-epi-tva" onchange="Epicerie.syncTVA()">
           <option value="0">Aucune (0%)</option>
           <option value="0.055" selected>5,5%</option>
           <option value="0.10">10%</option>
           <option value="0.20">20%</option>
         </select>
-        <div id="m-epi-conv" style="font-size:.72rem;color:var(--text3);margin-top:3px"></div>
+      </div>
+      <div class="r2">
+        <div class="fg">
+          <label class="fl">Prix HT (€)</label>
+          <input type="number" id="m-epi-prix-ht" placeholder="0.00" step="0.01" min="0" oninput="Epicerie.syncPrix('ht')">
+        </div>
+        <div class="fg">
+          <label class="fl">Prix TTC (€)</label>
+          <input type="number" id="m-epi-prix-ttc" placeholder="0.00" step="0.01" min="0" oninput="Epicerie.syncPrix('ttc')">
+        </div>
       </div>
       <div class="fg">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.84rem">

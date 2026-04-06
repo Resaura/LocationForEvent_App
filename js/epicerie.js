@@ -126,7 +126,7 @@ const Epicerie = (() => {
               <span class="badge bg-grey" style="font-size:.66rem">${p.categorie || '—'}</span>
             </div>
             <div style="font-size:.78rem;color:var(--grey);margin-top:2px">
-              ${p.prix.toFixed(2)} € / ${p.unite || 'unité'}${p.tva ? ` <span style="font-size:.68rem;color:var(--blue)">(TVA ${(p.tva*100).toFixed(1).replace('.0','')}%)</span>` : ''}
+              ${p.prix.toFixed(2)} € HT${p.pa_ttc ? ` / ${p.pa_ttc.toFixed(2)} € TTC` : ''} / ${p.unite || 'unité'}${p.tva ? ` <span style="font-size:.68rem;color:var(--blue)">(TVA ${(p.tva*100).toFixed(1).replace('.0','')}%)</span>` : ''}
             </div>
           </div>
           <div class="btn-row" style="flex-shrink:0">
@@ -146,11 +146,13 @@ const Epicerie = (() => {
     const titleEl = document.getElementById('m-epi-title');
     const idEl    = document.getElementById('m-epi-id');
     const nomEl   = document.getElementById('m-epi-nom');
-    const prixEl  = document.getElementById('m-epi-prix');
     const uniteEl = document.getElementById('m-epi-unite');
     const catEl   = document.getElementById('m-epi-cat');
     const actifEl = document.getElementById('m-epi-actif');
     const consEl  = document.getElementById('m-epi-conserv');
+
+    const htEl  = document.getElementById('m-epi-prix-ht');
+    const ttcEl = document.getElementById('m-epi-prix-ttc');
 
     if (id) {
       const p = db.epicerie.find(x => x.id === id);
@@ -158,18 +160,25 @@ const Epicerie = (() => {
       if (titleEl) titleEl.textContent = 'Modifier le produit';
       if (idEl)    idEl.value    = id;
       if (nomEl)   nomEl.value   = p.nom || '';
-      if (prixEl)  prixEl.value  = p.prix || '';
+      if (htEl)    htEl.value    = p.prix || '';
+      if (ttcEl)   ttcEl.value   = p.pa_ttc || '';
       if (uniteEl) uniteEl.value = p.unite || 'unité';
       if (catEl)   catEl.value   = p.categorie || 'Consommables';
       if (consEl)  consEl.value  = p.conservation || 'Sec';
       const tvaEl = document.getElementById('m-epi-tva');
       if (tvaEl)   tvaEl.value  = p.tva != null ? String(p.tva) : '0.055';
       if (actifEl) actifEl.checked = p.actif !== false;
+      // Si pa_ttc absent, recalculer
+      if (p.prix && !p.pa_ttc && ttcEl) {
+        const tva = p.tva || 0;
+        ttcEl.value = tva > 0 ? (p.prix * (1 + tva)).toFixed(2) : p.prix;
+      }
     } else {
       if (titleEl) titleEl.textContent = 'Nouveau produit';
       if (idEl)    idEl.value    = '';
       if (nomEl)   nomEl.value   = '';
-      if (prixEl)  prixEl.value  = '';
+      if (htEl)    htEl.value    = '';
+      if (ttcEl)   ttcEl.value   = '';
       if (uniteEl) uniteEl.value = 'unité';
       if (catEl)   catEl.value   = 'Consommables';
       if (consEl)  consEl.value  = 'Sec';
@@ -179,7 +188,6 @@ const Epicerie = (() => {
     }
 
     App.openModal('m-epi');
-    showConversion();
   }
 
   // ── Enregistrer ───────────────────────────────────────────
@@ -189,7 +197,8 @@ const Epicerie = (() => {
 
     const item = {
       nom,
-      prix:         parseFloat(document.getElementById('m-epi-prix')?.value) || 0,
+      prix:         parseFloat(document.getElementById('m-epi-prix-ht')?.value) || 0,
+      pa_ttc:     parseFloat(document.getElementById('m-epi-prix-ttc')?.value) || 0,
       unite:        document.getElementById('m-epi-unite')?.value?.trim() || 'unité',
       categorie:    document.getElementById('m-epi-cat')?.value || 'Consommables',
       conservation: document.getElementById('m-epi-conserv')?.value || 'Sec',
@@ -261,26 +270,36 @@ const Epicerie = (() => {
     _renderList();
   }
 
-  // ── Conversion HT/TTC ─────────────────────────────────────
-  function showConversion() {
-    const prix = parseFloat(document.getElementById('m-epi-prix')?.value);
-    const tva  = parseFloat(document.getElementById('m-epi-tva')?.value) || 0;
-    const badge = document.getElementById('m-epi-prix-badge');
-    const tvaBadge = document.getElementById('m-epi-tva-badge');
-    const conv  = document.getElementById('m-epi-conv');
-    const lbl = labelPrix();
-    if (badge) badge.textContent = `Prix ${lbl}`;
-    if (tvaBadge) tvaBadge.textContent = '';
-    if (!conv) return;
-    if (!prix || prix <= 0) { conv.textContent = ''; return; }
-    if (!tva) { conv.textContent = `= Prix HT = Prix TTC (pas de TVA)`; return; }
-    const ttc = (prix * (1 + tva)).toFixed(2);
-    const ht  = (prix / (1 + tva)).toFixed(2);
-    conv.textContent = lbl === 'HT'
-      ? `= ${ttc} € TTC (TVA ${(tva * 100).toFixed(1).replace('.0', '')}%)`
-      : `= ${ht} € HT (TVA ${(tva * 100).toFixed(1).replace('.0', '')}%)`;
+  // ── Sync HT ↔ TTC ─────────────────────────────────────────
+  function syncPrix(dir) {
+    const tva = parseFloat(document.getElementById('m-epi-tva')?.value) || 0;
+    if (dir === 'ht') {
+      const ht = parseFloat(document.getElementById('m-epi-prix-ht')?.value);
+      if (!isNaN(ht) && ht >= 0) {
+        const ttc = tva > 0 ? (ht * (1 + tva)) : ht;
+        const el = document.getElementById('m-epi-prix-ttc');
+        if (el) el.value = ttc.toFixed(2);
+      }
+    } else {
+      const ttc = parseFloat(document.getElementById('m-epi-prix-ttc')?.value);
+      if (!isNaN(ttc) && ttc >= 0) {
+        const ht = tva > 0 ? (ttc / (1 + tva)) : ttc;
+        const el = document.getElementById('m-epi-prix-ht');
+        if (el) el.value = ht.toFixed(2);
+      }
+    }
   }
 
-  return { render, openModal, save, del, toggle, setFilter, filter, showConversion, seedDefaults };
+  function syncTVA() {
+    const ht = parseFloat(document.getElementById('m-epi-prix-ht')?.value);
+    if (!isNaN(ht) && ht > 0) {
+      const tva = parseFloat(document.getElementById('m-epi-tva')?.value) || 0;
+      const ttc = tva > 0 ? (ht * (1 + tva)) : ht;
+      const el = document.getElementById('m-epi-prix-ttc');
+      if (el) el.value = ttc.toFixed(2);
+    }
+  }
+
+  return { render, openModal, save, del, toggle, setFilter, filter, syncPrix, syncTVA, seedDefaults };
 })();
 window.Epicerie = Epicerie;
