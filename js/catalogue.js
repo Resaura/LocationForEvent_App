@@ -149,13 +149,19 @@ const Catalogue = (() => {
     const id   = parseInt(_getVal('m-mat-id')) || null;
     const tvaRaw = _getVal('m-mat-tva');
     const tvaVal = parseFloat(tvaRaw);
+    const tva   = isNaN(tvaVal) ? 0 : tvaVal;
+    const paHT  = parseFloat(_getVal('m-mat-pa-ht'))  || 0;
+    const paTTC = parseFloat(_getVal('m-mat-pa-ttc')) || 0;
+    // Calculer pa (HT) depuis TTC si HT vide, et inversement
+    const pa     = paHT || (paTTC > 0 ? paTTC / (1 + tva) : 0) || null;
+    const pa_ttc = paTTC || (paHT > 0 ? paHT * (1 + tva) : 0) || null;
     const data = {
       name:   nom,
-      pa:     parseFloat(_getVal('m-mat-pa-ht'))  || null,
-      pa_ttc: parseFloat(_getVal('m-mat-pa-ttc')) || null,
+      pa,
+      pa_ttc,
       cat:    _getVal('m-mat-cat')                || 'Autre',
       owned:  _getVal('m-mat-statut') === 'owned',
-      tva:    isNaN(tvaVal) ? 0 : tvaVal,
+      tva,
       notes:  _getVal('m-mat-notes').trim()
     };
 
