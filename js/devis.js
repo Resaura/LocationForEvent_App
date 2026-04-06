@@ -338,13 +338,18 @@ const Devis = (() => {
     const actives = (db.remises || []).filter(r => r.actif);
     barEl.innerHTML = `
       <span class="sel-count">${ids.length} ligne${ids.length > 1 ? 's' : ''} sélectionnée${ids.length > 1 ? 's' : ''}</span>
-      <select id="nd-sel-remise">
+      <select id="nd-sel-remise" onchange="Devis._onSelRemiseChange()">
         <option value="">— Remise —</option>
         ${actives.map(r => {
           const val = r.type === 'pourcentage' ? `${r.valeur}%` : `${r.valeur.toFixed(2)} €`;
-          return `<option value="${r.id}">${r.nom} (${val})</option>`;
+          return `<option value="${r.id}" data-type="${r.type}" data-valeur="${r.valeur}">${r.nom} (${val})</option>`;
         }).join('')}
       </select>
+      <select id="nd-sel-remise-type" style="width:80px;font-size:.78rem;display:none">
+        <option value="pourcentage">%</option>
+        <option value="fixe">€ fixe</option>
+      </select>
+      <input type="number" id="nd-sel-remise-val" placeholder="Valeur" step="0.01" min="0" style="width:70px;font-size:.78rem;display:none">
       <button class="btn btn-primary btn-sm" onclick="Devis.applyRemiseToSelected()"><i data-lucide="tag"></i> Appliquer</button>
       <button class="btn btn-ghost btn-sm" onclick="Devis.deselectAll()">Désélectionner</button>`;
     lucide.createIcons({ nodes: barEl.querySelectorAll('[data-lucide]') });
@@ -357,6 +362,24 @@ const Devis = (() => {
     _updateSelBar();
   }
 
+  // ── Afficher les champs type/valeur quand une remise est sélectionnée ──
+  function _onSelRemiseChange() {
+    const selEl = document.getElementById('nd-sel-remise');
+    const typeEl = document.getElementById('nd-sel-remise-type');
+    const valEl  = document.getElementById('nd-sel-remise-val');
+    if (!selEl || !typeEl || !valEl) return;
+    const opt = selEl.selectedOptions[0];
+    if (!opt || !opt.value) {
+      typeEl.style.display = 'none';
+      valEl.style.display  = 'none';
+      return;
+    }
+    typeEl.value = opt.dataset.type || 'pourcentage';
+    valEl.value  = opt.dataset.valeur || '';
+    typeEl.style.display = '';
+    valEl.style.display  = '';
+  }
+
   // ── Appliquer une remise aux lignes sélectionnées ─────────
   function applyRemiseToSelected() {
     const selEl = document.getElementById('nd-sel-remise');
@@ -366,6 +389,13 @@ const Devis = (() => {
 
     const r = db.remises.find(x => x.id === rId);
     if (!r) return;
+
+    // Lire type/valeur modifiés par l'utilisateur
+    const typeEl = document.getElementById('nd-sel-remise-type');
+    const valEl  = document.getElementById('nd-sel-remise-val');
+    const rType  = typeEl ? typeEl.value : r.type;
+    const rVal   = valEl && valEl.value !== '' ? parseFloat(valEl.value) : r.valeur;
+    if (!rVal || rVal <= 0) { App.toast('Valeur de remise invalide', 'warn'); return; }
 
     const ids = _getCheckedIds();
     if (!ids.length) { App.toast('Aucune ligne sélectionnée', 'warn'); return; }
@@ -377,7 +407,7 @@ const Devis = (() => {
       if (!l.remises) l.remises = [];
       // Ne pas ajouter la même remise deux fois sur la même ligne
       if (l.remises.find(x => x.nom === r.nom)) return;
-      l.remises.push({ nom: r.nom, type: r.type, valeur: r.valeur, montant_deduit: 0 });
+      l.remises.push({ nom: r.nom, type: rType, valeur: rVal, montant_deduit: 0 });
       count++;
     });
 
@@ -481,6 +511,23 @@ const Devis = (() => {
   }
 
   // ── Remises ────────────────────────────────────────────────
+  function _onGlobalRemiseChange() {
+    const selEl  = document.getElementById('nd-remise-sel');
+    const typeEl = document.getElementById('nd-remise-type');
+    const valEl  = document.getElementById('nd-remise-valeur');
+    if (!selEl || !typeEl || !valEl) return;
+    const opt = selEl.selectedOptions[0];
+    if (!opt || !opt.value) {
+      typeEl.style.display = 'none';
+      valEl.style.display  = 'none';
+      return;
+    }
+    typeEl.value = opt.dataset.type || 'pourcentage';
+    valEl.value  = opt.dataset.valeur || '';
+    typeEl.style.display = '';
+    valEl.style.display  = '';
+  }
+
   function addRemise() {
     const selEl = document.getElementById('nd-remise-sel');
     if (!selEl) return;
@@ -490,6 +537,13 @@ const Devis = (() => {
     const r = db.remises.find(x => x.id === id);
     if (!r) return;
 
+    // Lire type/valeur modifiés par l'utilisateur
+    const typeEl = document.getElementById('nd-remise-type');
+    const valEl  = document.getElementById('nd-remise-valeur');
+    const rType  = typeEl ? typeEl.value : r.type;
+    const rVal   = valEl && valEl.value !== '' ? parseFloat(valEl.value) : r.valeur;
+    if (!rVal || rVal <= 0) { App.toast('Valeur de remise invalide', 'warn'); return; }
+
     // Vérifier si déjà appliquée
     if (_remises.find(x => x.nom === r.nom)) {
       App.toast('Cette remise est déjà appliquée', 'warn');
@@ -498,12 +552,14 @@ const Devis = (() => {
 
     _remises.push({
       nom:    r.nom,
-      type:   r.type,
-      valeur: r.valeur,
+      type:   rType,
+      valeur: rVal,
       montant_deduit: 0,
     });
 
     selEl.value = '';
+    if (typeEl) typeEl.style.display = 'none';
+    if (valEl)  { valEl.value = ''; valEl.style.display = 'none'; }
     updateTotals();
     App.toast('Remise appliquée ✅', 'ok');
   }
@@ -629,10 +685,13 @@ const Devis = (() => {
 
     if (!selectedOpts.length) { App.toast('Sélectionnez au moins une option', 'warn'); return; }
 
-    const suffix = ` (${selectedOpts.join(', ')})`;
+    const optNames = selectedOpts.join(', ');
+    const displayName = (optNames === svc.nom || selectedOpts.length === 1 && selectedOpts[0] === svc.nom)
+      ? svc.nom
+      : `${svc.nom} — ${optNames}`;
     _lines.push({
       id:   Date.now(),
-      name: svc.nom + suffix,
+      name: displayName,
       dur:  'service',
       qty:  1,
       pu:   totalPrix,
@@ -974,8 +1033,13 @@ const Devis = (() => {
     el.innerHTML = '<option value="">— Choisir une remise —</option>' +
       actives.map(r => {
         const val = r.type === 'pourcentage' ? `${r.valeur}%` : `${r.valeur.toFixed(2)} €`;
-        return `<option value="${r.id}">${r.nom} (${val})</option>`;
+        return `<option value="${r.id}" data-type="${r.type}" data-valeur="${r.valeur}">${r.nom} (${val})</option>`;
       }).join('');
+    // Reset les champs type/valeur
+    const typeEl = document.getElementById('nd-remise-type');
+    const valEl  = document.getElementById('nd-remise-valeur');
+    if (typeEl) typeEl.style.display = 'none';
+    if (valEl)  valEl.style.display  = 'none';
   }
 
   // ── Helpers ───────────────────────────────────────────────
@@ -1026,8 +1090,8 @@ const Devis = (() => {
 
   return { prefill, fillFromClient, renderCliList, matSearch, pickMat, calcLine, addLine, delLine, editLine,
            renderLines, updateTotals, save, saveAsFacture, print, download, edit, reset, calcDuree,
-           addRemise, removeRemise,
-           onLineCheck, deselectAll, applyRemiseToSelected, removeLineRemise,
+           addRemise, removeRemise, _onGlobalRemiseChange,
+           onLineCheck, deselectAll, applyRemiseToSelected, removeLineRemise, _onSelRemiseChange,
            renderServicePicker, updateServiceOptions, refreshServiceTotal, addServiceLine,
            renderEpiceriePicker, epiSearch, pickEpi, epiCalc, addEpiLine };
 })();
@@ -1326,7 +1390,7 @@ const Historique = (() => {
           if (totalTVA > 0) {
             const rows = Object.entries(tvaMap)
               .filter(([, v]) => v.montantTva > 0)
-              .map(([taux, v]) => `<div style="color:var(--grey)">TVA ${(taux * 100).toFixed(1).replace('.0', '')}% (base ${v.baseHT.toFixed(2)} €) : ${v.montantTva.toFixed(2)} €</div>`)
+              .map(([taux, v]) => `<div style="color:var(--grey)">TVA ${(taux * 100).toFixed(1).replace('.0', '')}% : ${v.montantTva.toFixed(2)} €</div>`)
               .join('');
             return `<div style="margin-top:5px;color:var(--grey)">Total HT : ${tot.toFixed(2)} €</div>
               ${rows}

@@ -436,10 +436,15 @@
                   <div id="nd-sel-bar" class="dv-sel-bar" style="display:none"></div>
                   <!-- Remises globales -->
                   <div id="nd-remises-applied" style="display:none;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border)"></div>
-                  <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
-                    <select id="nd-remise-sel" style="flex:1;font-size:.8rem">
+                  <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+                    <select id="nd-remise-sel" onchange="Devis._onGlobalRemiseChange()" style="flex:1;font-size:.8rem;min-width:140px">
                       <option value="">— Remise globale —</option>
                     </select>
+                    <select id="nd-remise-type" style="width:80px;font-size:.78rem;display:none">
+                      <option value="pourcentage">%</option>
+                      <option value="fixe">€ fixe</option>
+                    </select>
+                    <input type="number" id="nd-remise-valeur" placeholder="Valeur" step="0.01" min="0" style="width:70px;font-size:.78rem;display:none">
                     <button class="btn btn-ghost btn-sm" onclick="Devis.addRemise()" style="white-space:nowrap"><i data-lucide="tag"></i> Appliquer</button>
                   </div>
                   <div id="nd-tva-detail" style="margin-top:4px"></div>

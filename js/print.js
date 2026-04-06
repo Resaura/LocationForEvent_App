@@ -164,8 +164,6 @@ ${(dv.client || dv.recup) ? `<div class="client-box">
 </table>
 
 <div class="tot">
-  ${km > 0 ? `<div>Livraison aller : ${(km * kmt).toFixed(2)} €</div>
-              <div>Retour (si récup.) : ${(km * kmt).toFixed(2)} €</div>` : ''}
   ${dvRemises.length ? `
     <div style="margin-top:6px">Sous-total : ${sousTotal.toFixed(2)} €</div>
     ${dvRemises.map(r => {
@@ -179,7 +177,7 @@ ${(dv.client || dv.recup) ? `<div class="client-box">
     if (totalTVA > 0) {
       const rows = Object.entries(tvaMap)
         .filter(([, v]) => v.montantTva > 0)
-        .map(([taux, v]) => `<div>TVA ${(taux * 100).toFixed(1).replace('.0', '')}% (base ${v.baseHT.toFixed(2)} €) : ${v.montantTva.toFixed(2)} €</div>`)
+        .map(([taux, v]) => `<div>TVA ${(taux * 100).toFixed(1).replace('.0', '')}% : ${v.montantTva.toFixed(2)} €</div>`)
         .join('');
       return `<div style="margin-top:6px">Total HT : ${tot.toFixed(2)} €</div>${rows}<div class="tot-main">Total TTC : ${(tot + totalTVA).toFixed(2)} €</div>`;
     }
@@ -229,7 +227,6 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
         body += `  Net HT : ${l.prixNet.toFixed(2)} €%0A`;
       }
     });
-    if (km > 0) body += `%0ALivraison aller : ${(km * kmt).toFixed(2)} €%0ARetour : ${(km * kmt).toFixed(2)} €`;
     if (dvRemises.length) {
       body += `%0A%0ASous-total : ${sousTotal.toFixed(2)} €`;
       dvRemises.forEach(r => {
@@ -439,10 +436,6 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
     y += 4;
     doc.setFontSize(10);
     doc.setTextColor(107, 114, 128);
-    if (km > 0) {
-      doc.text(`Livraison aller : ${(km * kmt).toFixed(2)} €`, W - M, y, { align: 'right' }); y += 5;
-      doc.text(`Retour (si récup.) : ${(km * kmt).toFixed(2)} €`, W - M, y, { align: 'right' }); y += 5;
-    }
     // Remises
     if (dvRemises.length) {
       doc.text(`Sous-total : ${sousTotal.toFixed(2)} €`, W - M, y, { align: 'right' }); y += 5;
@@ -459,7 +452,7 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
       doc.setFontSize(10);
       doc.text(`Total HT : ${tot.toFixed(2)} €`, W - M, y, { align: 'right' }); y += 5;
       Object.entries(tvaMap).filter(([, v]) => v.montantTva > 0).forEach(([taux, v]) => {
-        doc.text(`TVA ${(taux * 100).toFixed(1).replace('.0', '')}% (base ${v.baseHT.toFixed(2)} €) : ${v.montantTva.toFixed(2)} €`, W - M, y, { align: 'right' }); y += 5;
+        doc.text(`TVA ${(taux * 100).toFixed(1).replace('.0', '')}% : ${v.montantTva.toFixed(2)} €`, W - M, y, { align: 'right' }); y += 5;
       });
       doc.setFontSize(13);
       doc.setFont(undefined, 'bold');
