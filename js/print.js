@@ -44,7 +44,9 @@ const Print = (() => {
     const isF = dv.doctype === 'facture';
     const km  = dv.km || 0;
     const kmt = p.km || 1.5;
-    const lines = _calcLines(dv.lines);
+    const allLines = _calcLines(dv.lines);
+    const lines    = allLines.filter(l => !l.optional);
+    const optLines = allLines.filter(l => l.optional);
     const sousTotal = lines.reduce((s, l) => s + l.prixNet, 0);
     const dvRemises = dv.remises || [];
     const totalRemises = dvRemises.reduce((s, r) => s + (r.montant_deduit || 0), 0);
@@ -187,6 +189,34 @@ ${(dv.client || dv.recup) ? `<div class="client-box">
   ${ds.afficherCaution ? `<div style="color:#6B7280">Caution estimée : ${caut} €</div>` : ''}
 </div>
 
+${optLines.length ? `
+<div style="margin-top:20px">
+  <div style="font-size:12px;font-weight:700;color:${c1};border-bottom:2px dashed #D97706;padding-bottom:4px;margin-bottom:8px">OPTIONS PROPOSÉES <span style="font-weight:400;font-size:10px;color:#6B7280">(non incluses dans le total)</span></div>
+  <table>
+    <thead><tr>
+      <th style="background:#D97706">Désignation</th>
+      <th style="background:#D97706">Durée</th>
+      <th style="background:#D97706;text-align:center">Qté</th>
+      <th style="background:#D97706;text-align:right">P.U.</th>
+      <th style="background:#D97706;text-align:right">Total</th>
+    </tr></thead>
+    <tbody>
+      ${optLines.map(l => {
+        const durL = DL[l.dur] || l.dur;
+        return `<tr>
+          <td>${l.name}</td>
+          <td>${durL}</td>
+          <td style="text-align:center">${l.qty || 1}</td>
+          <td style="text-align:right">${(l.pu || l.prix).toFixed(2)} €</td>
+          <td style="text-align:right;font-weight:600">${l.prix.toFixed(2)} €</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>
+  <div style="font-size:10px;color:#6B7280;font-style:italic;margin-top:4px">Ces options peuvent être ajoutées sur simple demande.</div>
+</div>
+` : ''}
+
 ${dv.notes ? `<div style="margin-top:18px;background:#F9FAFB;padding:12px;border-radius:8px;font-size:12px"><strong>Notes :</strong> ${dv.notes}</div>` : ''}
 
 ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : ''}
@@ -203,7 +233,9 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
     const isF  = dv.doctype === 'facture';
     const km   = dv.km || 0;
     const kmt  = p.km || 1.5;
-    const emailLines = _calcLines(dv.lines);
+    const allEmailLines = _calcLines(dv.lines);
+    const emailLines   = allEmailLines.filter(l => !l.optional);
+    const emailOptLines = allEmailLines.filter(l => l.optional);
     const sousTotal = emailLines.reduce((s, l) => s + l.prixNet, 0);
     const dvRemises = dv.remises || [];
     const totalRemGlob = dvRemises.reduce((s, r) => s + (r.montant_deduit || 0), 0);
@@ -247,6 +279,13 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
       body += `%0A%0ATOTAL : ${tot.toFixed(2)} €`;
     }
     body += `%0ACaution : ${caut} €`;
+    if (emailOptLines.length) {
+      body += `%0A%0AOPTIONS PROPOSÉES (non incluses dans le total) :%0A`;
+      emailOptLines.forEach(l => {
+        body += `- ${l.name} (${DL[l.dur] || l.dur} ×${l.qty || 1}) : ${l.prix.toFixed(2)} €%0A`;
+      });
+      body += `Ces options peuvent être ajoutées sur simple demande.`;
+    }
     if (dv.notes) body += `%0A%0ANotes : ${dv.notes}`;
     if (p.mentions) body += `%0A%0A${p.mentions}`;
     body += `%0A%0A${p.nom || 'LocationForEvent'} · ${p.tel || ''} · ${p.site || ''}`;
@@ -267,7 +306,9 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
     const isF = dv.doctype === 'facture';
     const km  = dv.km || 0;
     const kmt = p.km || 1.5;
-    const pdfLines = _calcLines(dv.lines);
+    const allPdfLines = _calcLines(dv.lines);
+    const pdfLines   = allPdfLines.filter(l => !l.optional);
+    const pdfOptLines = allPdfLines.filter(l => l.optional);
     const sousTotal = pdfLines.reduce((s, l) => s + l.prixNet, 0);
     const dvRemises = dv.remises || [];
     const totalRemises = dvRemises.reduce((s, r) => s + (r.montant_deduit || 0), 0);
@@ -476,6 +517,58 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
       y += 4;
     }
 
+    // ─ Options proposées ─
+    if (pdfOptLines.length) {
+      if (y > 240) { doc.addPage(); y = M; }
+      y += 4;
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(15, 39, 68);
+      doc.text('OPTIONS PROPOSÉES', M, y + 5);
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(107, 114, 128);
+      doc.text('(non incluses dans le total)', M + 52, y + 5);
+      y += 10;
+
+      // En-tête orange
+      doc.setFillColor(217, 119, 6);
+      doc.rect(M, y, W - 2 * M, 8, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'bold');
+      doc.text('Désignation', M + 3, y + 5.5);
+      doc.text('Durée', colX[1] + 2, y + 5.5);
+      doc.text('Qté', colX[2] + 2, y + 5.5);
+      doc.text('P.U.', colX[3] + 2, y + 5.5);
+      doc.text('Total', W - M - 3, y + 5.5, { align: 'right' });
+      y += 8;
+
+      doc.setFont(undefined, 'normal');
+      doc.setFontSize(9);
+      pdfOptLines.forEach((l, i) => {
+        if (y > 260) { doc.addPage(); y = M; }
+        if (i % 2 === 1) {
+          doc.setFillColor(255, 251, 235);
+          doc.rect(M, y, W - 2 * M, 7, 'F');
+        }
+        doc.setTextColor(17, 17, 17);
+        const durLabel = l.dur === 'epicerie' ? 'Épicerie' : l.dur === 'service' ? 'Service' : l.dur === 'protection' ? 'Protection' : (DL[l.dur] || l.dur);
+        doc.text(l.name.substring(0, 38), M + 3, y + 5);
+        doc.text(durLabel, colX[1] + 2, y + 5);
+        doc.text(String(l.qty || 1), colX[2] + 2, y + 5);
+        doc.text((l.pu || l.prix).toFixed(2) + ' €', colX[3] + 2, y + 5);
+        doc.setFont(undefined, 'bold');
+        doc.text(l.prix.toFixed(2) + ' €', W - M - 3, y + 5, { align: 'right' });
+        doc.setFont(undefined, 'normal');
+        y += 7;
+      });
+      doc.setFontSize(7.5);
+      doc.setTextColor(107, 114, 128);
+      doc.text('Ces options peuvent être ajoutées sur simple demande.', M, y + 4);
+      y += 10;
+    }
+
     // ─ Notes ─
     if (dv.notes) {
       if (y > 255) { doc.addPage(); y = M; }
@@ -513,7 +606,9 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
     if (!dv) return;
     const p   = db.params || {};
     const ds  = _ds();
-    const lines = _calcLines(dv.lines);
+    const allContratLines = _calcLines(dv.lines);
+    const lines    = allContratLines.filter(l => !l.optional);
+    const contratOptLines = allContratLines.filter(l => l.optional);
     const sousTotal = lines.reduce((s, l) => s + l.prixNet, 0);
     const dvRemises = dv.remises || [];
     const totalRemises = dvRemises.reduce((s, r) => s + (r.montant_deduit || 0), 0);
@@ -547,6 +642,32 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
         </tr>`;
       }).join('')}</tbody>
     </table>`;
+
+    // Tableau options HTML
+    const optTableauHtml = contratOptLines.length ? `
+    <div style="margin-top:14px">
+      <div style="font-size:12px;font-weight:700;color:${c1};border-bottom:2px dashed #D97706;padding-bottom:4px;margin-bottom:8px">OPTIONS PROPOSÉES <span style="font-weight:400;font-size:10px;color:#6B7280">(non incluses dans le total)</span></div>
+      <table>
+        <thead><tr>
+          <th style="background:#D97706">Désignation</th>
+          <th style="background:#D97706;text-align:center">Durée</th>
+          <th style="background:#D97706;text-align:center">Qté</th>
+          <th style="background:#D97706;text-align:right">P.U. HT</th>
+          <th style="background:#D97706;text-align:right">Total HT</th>
+        </tr></thead>
+        <tbody>${contratOptLines.map(l => {
+          const durLabel = l.dur === 'epicerie' ? 'Épicerie' : l.dur === 'service' ? 'Service' : l.dur === 'protection' ? 'Protection' : (DL[l.dur] || l.dur);
+          return `<tr>
+            <td style="padding:6px 10px;border:1px solid #D1D5DB">${l.name}</td>
+            <td style="padding:6px 10px;border:1px solid #D1D5DB;text-align:center">${durLabel}</td>
+            <td style="padding:6px 10px;border:1px solid #D1D5DB;text-align:center">${l.qty || 1}</td>
+            <td style="padding:6px 10px;border:1px solid #D1D5DB;text-align:right">${(l.pu || l.prix).toFixed(2)} €</td>
+            <td style="padding:6px 10px;border:1px solid #D1D5DB;text-align:right;font-weight:600">${l.prixNet.toFixed(2)} €</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+      <div style="font-size:10px;color:#6B7280;font-style:italic;margin-top:4px">Ces options peuvent être ajoutées sur simple demande.</div>
+    </div>` : '';
 
     // TVA détail
     let tvaDetailStr = '';
@@ -599,7 +720,7 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
     }
 
     // Convertir en HTML : remplacer le placeholder table, convertir bullets et sauts de ligne
-    body = body.replace(/__TABLE__/g, tableauHtml);
+    body = body.replace(/__TABLE__/g, tableauHtml + optTableauHtml);
     body = body.replace(/^• (.+)$/gm, '<li>$1</li>');
     body = body.replace(/(<li>.*<\/li>\n?)+/gs, m => '<ul>' + m + '</ul>');
     body = body.replace(/\n/g, '<br>');

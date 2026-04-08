@@ -281,7 +281,10 @@ const Devis = (() => {
     // Recalculer les remises de chaque ligne
     _lines.forEach(l => _applyLineRemises(l));
 
-    linesEl.innerHTML = _lines.map(l => {
+    const included = _lines.filter(l => !l.optional);
+    const optional = _lines.filter(l => l.optional);
+
+    function _lineHtml(l) {
       const badge = l.dur === 'epicerie'
         ? '<span style="font-size:.65rem;background:#FEF3C7;color:#D97706;padding:1px 6px;border-radius:99px;font-weight:600;margin-left:4px"><i data-lucide="shopping-cart"></i> Épicerie</span>'
         : l.dur === 'service'
@@ -289,9 +292,8 @@ const Devis = (() => {
         : l.dur === 'protection'
         ? '<span style="font-size:.65rem;background:#F5F3FF;color:#7C3AED;padding:1px 6px;border-radius:99px;font-weight:600;margin-left:4px"><i data-lucide="shield"></i> Protection</span>'
         : '';
+      const optBadge = l.optional ? ' <span style="font-size:.6rem;background:#FEF3C7;color:#D97706;padding:1px 5px;border-radius:99px;font-weight:600">Option</span>' : '';
       const hasRem = l.remises && l.remises.length > 0;
-
-      // Remises par ligne
       let remHtml = '';
       if (hasRem) {
         remHtml = `<div class="dv-line-remises">${l.remises.map((r, ri) => {
@@ -304,24 +306,45 @@ const Devis = (() => {
         }).join('')}</div>
         <div class="dv-line-net">Net HT : ${l.prixNet.toFixed(2)} €</div>`;
       }
-
-      return `<div class="dv-line-wrap">
+      const optClass = l.optional ? ' dv-line-optional' : '';
+      const optBtn = `<button class="btn-optional${l.optional ? ' active' : ''}" onclick="Devis.toggleOptional(${l.id})" title="${l.optional ? 'Remettre inclus' : 'Passer en option'}"><i data-lucide="gift"></i></button>`;
+      return `<div class="dv-line-wrap${optClass}">
         <div class="dv-line">
           <input type="checkbox" class="line-check" data-id="${l.id}" onchange="Devis.onLineCheck()">
-          <span class="dv-ln">${l.name}${badge}</span>
+          <span class="dv-ln">${l.name}${badge}${optBadge}</span>
           <span class="dv-dur">${DL[l.dur] || l.dur}</span>
           <span class="dv-qty">×${l.qty}</span>
           <span class="dv-pr">${l.prix.toFixed(2)} €</span>
           <button class="dv-edit" onclick="Devis.editLine(${l.id})" title="Modifier"><i data-lucide="pencil"></i></button>
+          ${optBtn}
           <button class="dv-del" onclick="Devis.delLine(${l.id})"><i data-lucide="x"></i></button>
         </div>
         ${remHtml}
       </div>`;
-    }).join('');
+    }
+
+    let html = '';
+    if (optional.length && included.length) {
+      html += '<div class="included-section-title">Lignes incluses</div>';
+    }
+    html += included.map(l => _lineHtml(l)).join('');
+    if (optional.length) {
+      html += '<div class="optional-section-title">En option (non inclus dans le total)</div>';
+      html += optional.map(l => _lineHtml(l)).join('');
+    }
+    linesEl.innerHTML = html;
     lucide.createIcons({ nodes: linesEl.querySelectorAll('[data-lucide]') });
 
     _updateSelBar();
     updateTotals();
+  }
+
+  // ── Toggle optionnel ──────────────────────────────────────
+  function toggleOptional(lineId) {
+    const l = _lines.find(x => x.id === lineId);
+    if (!l) return;
+    l.optional = !l.optional;
+    renderLines();
   }
 
   // ── Barre de sélection ────────────────────────────────────
@@ -429,10 +452,12 @@ const Devis = (() => {
 
   // ── Totaux ────────────────────────────────────────────────
   function updateTotals() {
+    // Exclure les lignes optionnelles du calcul
+    const includedLines = _lines.filter(l => !l.optional);
     // Sous-total = somme des prixNet (après remises par ligne)
-    const sousTotalBrut = _lines.reduce((s, l) => s + l.prix, 0);
-    const sousTotal     = _lines.reduce((s, l) => s + (l.prixNet != null ? l.prixNet : l.prix), 0);
-    const caut  = _lines.reduce((s, l) => s + (l.caut || 0), 0);
+    const sousTotalBrut = includedLines.reduce((s, l) => s + l.prix, 0);
+    const sousTotal     = includedLines.reduce((s, l) => s + (l.prixNet != null ? l.prixNet : l.prix), 0);
+    const caut  = includedLines.reduce((s, l) => s + (l.caut || 0), 0);
     const km    = parseFloat(_getVal('nd-km')) || 0;
     const kmt   = db.params?.km || 1.5;
     const lp    = labelPrix();
@@ -476,7 +501,7 @@ const Devis = (() => {
     // TVA détail complet — toujours visible
     const tvaEl = document.getElementById('nd-tva-detail');
     if (tvaEl) {
-      const tvaMap = calcTvaMap(_lines.map(l => ({ ...l, prix: l.prixNet != null ? l.prixNet : l.prix })), totalRemisesGlobales, sousTotal);
+      const tvaMap = calcTvaMap(includedLines.map(l => ({ ...l, prix: l.prixNet != null ? l.prixNet : l.prix })), totalRemisesGlobales, sousTotal);
       const totalTVA = Object.values(tvaMap).reduce((s, v) => s + v.montantTva, 0);
 
       tvaEl.style.display = 'block';
@@ -907,7 +932,8 @@ const Devis = (() => {
   function _buildData(doctype = 'devis') {
     // Recalculer remises par ligne
     _lines.forEach(l => _applyLineRemises(l));
-    const sousTotal = _lines.reduce((s, l) => s + (l.prixNet != null ? l.prixNet : l.prix), 0);
+    const includedLines = _lines.filter(l => !l.optional);
+    const sousTotal = includedLines.reduce((s, l) => s + (l.prixNet != null ? l.prixNet : l.prix), 0);
     let totalRemisesGlobales = 0;
     const remisesCopy = JSON.parse(JSON.stringify(_remises));
     remisesCopy.forEach(r => {
@@ -1161,6 +1187,7 @@ const Devis = (() => {
   return { prefill, fillFromClient, renderCliList, matSearch, pickMat, calcLine, addLine, delLine, editLine,
            renderLines, updateTotals, save, saveAsFacture, print, download, edit, reset, calcDuree,
            addRemise, removeRemise, _onGlobalRemiseChange,
+           toggleOptional,
            onLineCheck, deselectAll, applyRemiseToSelected, removeLineRemise, _onSelRemiseChange,
            renderServicePicker, updateServiceOptions, refreshServiceTotal, addServiceLine,
            renderEpiceriePicker, epiSearch, pickEpi, epiCalc, addEpiLine,
