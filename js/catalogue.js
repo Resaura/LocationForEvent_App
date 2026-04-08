@@ -5,6 +5,7 @@
 const Catalogue = (() => {
   let _filCat    = 'Tous';
   let _filSearch = '';
+  let _pendingImage = null; // base64 image en attente de sauvegarde
 
   // ── Rendu principal ────────────────────────────────────────
   function render() {
@@ -54,8 +55,9 @@ const Catalogue = (() => {
 
       const tvaLabel = i.tva ? `${(i.tva * 100).toFixed(1).replace('.0', '')} %` : '—';
 
+      const thumb = i.image ? `<img src="${i.image}" style="width:36px;height:28px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:6px">` : '';
       return `<tr>
-        <td style="font-weight:500;max-width:200px" class="truncate">${i.name}</td>
+        <td style="font-weight:500;max-width:200px" class="truncate">${thumb}${i.name}</td>
         <td><span class="badge bg-grey">${i.cat || 'Autre'}</span></td>
         <td>${prixDisp}</td>
         <td class="text-sm">${tvaLabel}</td>
@@ -98,6 +100,11 @@ const Catalogue = (() => {
     if (titleEl) titleEl.textContent = id ? 'Modifier le matériel' : 'Nouveau matériel';
     if (prevEl)  prevEl.style.display = 'none';
 
+    // Reset image
+    _pendingImage = null;
+    const imgInput = document.getElementById('m-mat-img-input');
+    if (imgInput) imgInput.value = '';
+
     if (id) {
       const item = db.cat.find(x => x.id === id);
       if (!item) return;
@@ -113,11 +120,15 @@ const Catalogue = (() => {
         const tva = item.tva || 0;
         _setVal('m-mat-pa-ttc', tva > 0 ? (item.pa * (1 + tva)).toFixed(2) : item.pa);
       }
+      // Image
+      _pendingImage = item.image || null;
+      _showImagePreview(item.image || null);
       previewPrix();
     } else {
       ['m-mat-nom', 'm-mat-pa-ht', 'm-mat-pa-ttc', 'm-mat-notes'].forEach(x => _setVal(x, ''));
       _setVal('m-mat-statut', 'owned');
       _setVal('m-mat-tva', '0');
+      _showImagePreview(null);
     }
 
     App.openModal('m-mat');
@@ -162,7 +173,8 @@ const Catalogue = (() => {
       cat:    _getVal('m-mat-cat')                || 'Autre',
       owned:  _getVal('m-mat-statut') === 'owned',
       tva,
-      notes:  _getVal('m-mat-notes').trim()
+      notes:  _getVal('m-mat-notes').trim(),
+      image:  _pendingImage || null
     };
 
     let item;
@@ -239,6 +251,43 @@ const Catalogue = (() => {
     if (el) el.value = val;
   }
 
+  // ── Image upload ────────────────────────────────────────────
+  function onImageChange(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    if (file.size > 500 * 1024) {
+      App.toast('Image trop lourde (max 500 Ko)', 'err');
+      input.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+      _pendingImage = e.target.result;
+      _showImagePreview(_pendingImage);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeImage() {
+    _pendingImage = '';
+    const input = document.getElementById('m-mat-img-input');
+    if (input) input.value = '';
+    _showImagePreview(null);
+  }
+
+  function _showImagePreview(src) {
+    const wrap = document.getElementById('m-mat-img-preview');
+    const img  = document.getElementById('m-mat-img-tag');
+    if (!wrap || !img) return;
+    if (src) {
+      img.src = src;
+      wrap.style.display = 'flex';
+    } else {
+      wrap.style.display = 'none';
+      img.src = '';
+    }
+  }
+
   // ── Sync HT ↔ TTC ─────────────────────────────────────────
   function syncPrix(dir) {
     const tva = parseFloat(_getVal('m-mat-tva')) || 0;
@@ -269,6 +318,6 @@ const Catalogue = (() => {
   }
 
   // ── API publique ──────────────────────────────────────────
-  return { render, filter, setFilter, openModal, previewPrix, syncPrix, syncTVA, save, del, exportCsv };
+  return { render, filter, setFilter, openModal, previewPrix, syncPrix, syncTVA, save, del, exportCsv, onImageChange, removeImage };
 })();
 window.Catalogue = Catalogue;

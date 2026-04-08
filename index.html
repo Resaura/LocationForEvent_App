@@ -943,6 +943,14 @@
       </div>
       <div class="info" id="m-mat-prev" style="display:none"></div>
       <div class="fg"><label class="fl">Notes</label><input type="text" id="m-mat-notes" placeholder="Capacité, marque…"></div>
+      <div class="fg">
+        <label class="fl">Photo du matériel</label>
+        <input type="file" id="m-mat-img-input" accept="image/*" onchange="Catalogue.onImageChange(this)" style="font-size:.82rem">
+        <div id="m-mat-img-preview" style="margin-top:8px;display:none">
+          <img id="m-mat-img-tag" style="width:120px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border)">
+          <button class="btn btn-ghost btn-sm" style="margin-left:8px;color:var(--red)" onclick="Catalogue.removeImage()">Supprimer la photo</button>
+        </div>
+      </div>
       <div class="sep"></div>
       <div class="btn-row">
         <button class="btn btn-primary" onclick="Catalogue.save()"><i data-lucide="save"></i> Enregistrer</button>

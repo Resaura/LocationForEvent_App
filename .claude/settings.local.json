@@ -10,7 +10,11 @@
       "Bash(grep -n \"^window\\\\.\" js/*.js)",
       "Bash(node -c js/stats.js)",
       "mcp__claude_ai_Supabase__list_tables",
-      "mcp__claude_ai_Supabase__apply_migration"
+      "mcp__claude_ai_Supabase__apply_migration",
+      "Bash(curl -s -X POST https://bslmkpvfmklsjxssjbyu.supabase.co/rest/v1/rpc/exec_sql -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbG1rcHZmbWtsc2p4c3NqYnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDkxMjUsImV4cCI6MjA5MDYyNTEyNX0.uiMDf_L50xfoPSJ5DShHhOfEeQjfdaBrafhNEPM9z7Y' -H 'Content-Type: application/json' -d '{\"query\": \"ALTER TABLE materiel ADD COLUMN IF NOT EXISTS image text;\"}')",
+      "Bash(curl -s --ssl-no-revoke -X POST https://bslmkpvfmklsjxssjbyu.supabase.co/rest/v1/rpc/exec_sql -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbG1rcHZmbWtsc2p4c3NqYnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDkxMjUsImV4cCI6MjA5MDYyNTEyNX0.uiMDf_L50xfoPSJ5DShHhOfEeQjfdaBrafhNEPM9z7Y' -H 'Content-Type: application/json' -d '{\"query\": \"ALTER TABLE materiel ADD COLUMN IF NOT EXISTS image text;\"}')",
+      "Bash(curl -s --ssl-no-revoke -X POST https://bslmkpvfmklsjxssjbyu.supabase.co/rest/v1/rpc/ -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbG1rcHZmbWtsc2p4c3NqYnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDkxMjUsImV4cCI6MjA5MDYyNTEyNX0.uiMDf_L50xfoPSJ5DShHhOfEeQjfdaBrafhNEPM9z7Y' -H 'Content-Type: application/json')",
+      "Bash(curl -s --ssl-no-revoke -X PATCH 'https://bslmkpvfmklsjxssjbyu.supabase.co/rest/v1/materiel?id=eq.-1' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzbG1rcHZmbWtsc2p4c3NqYnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDkxMjUsImV4cCI6MjA5MDYyNTEyNX0.uiMDf_L50xfoPSJ5DShHhOfEeQjfdaBrafhNEPM9z7Y' -H 'Content-Type: application/json' -H 'Prefer: return=representation' -d '{\"image\": null}')"
     ]
   }
 }

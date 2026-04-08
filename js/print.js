@@ -37,6 +37,21 @@ const Print = (() => {
     });
   }
 
+  // Helper : enrichir lignes avec images/descriptions depuis le catalogue
+  function _enrichLines(lines) {
+    return lines.map(l => {
+      const ll = { ...l };
+      if (!ll._image && ll.dur !== 'epicerie' && ll.dur !== 'service' && ll.dur !== 'protection') {
+        const item = db.cat.find(i => i.name === ll.name);
+        if (item) {
+          if (item.image) ll._image = item.image;
+          if (item.notes && !ll._desc) ll._desc = item.notes;
+        }
+      }
+      return ll;
+    });
+  }
+
   function dv(dv) {
     if (!dv) return;
     const p   = db.params || {};
@@ -44,7 +59,7 @@ const Print = (() => {
     const isF = dv.doctype === 'facture';
     const km  = dv.km || 0;
     const kmt = p.km || 1.5;
-    const allLines = _calcLines(dv.lines);
+    const allLines = _enrichLines(_calcLines(dv.lines));
     const lines    = allLines.filter(l => !l.optional);
     const optLines = allLines.filter(l => l.optional);
     const sousTotal = lines.reduce((s, l) => s + l.prixNet, 0);
@@ -147,6 +162,8 @@ ${(dv.client || dv.recup) ? `<div class="client-box">
                    : l.dur === 'service'    ? ' <span style="font-size:9px;background:#EFF6FF;color:#1D4ED8;padding:1px 5px;border-radius:99px">Service</span>'
                    : l.dur === 'protection' ? ' <span style="font-size:9px;background:#F5F3FF;color:#7C3AED;padding:1px 5px;border-radius:99px">Protection</span>'
                    : '';
+      const imgTag = l._image ? `<img src="${l._image}" style="width:50px;height:35px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:6px">` : '';
+      const descTag = (l._protDesc || l._desc) ? `<br><span style="font-size:9px;color:#6B7280">${l._protDesc || l._desc}</span>` : '';
       const hasRem = l.remises && l.remises.length > 0;
       let remRows = '';
       if (hasRem) {
@@ -157,7 +174,7 @@ ${(dv.client || dv.recup) ? `<div class="client-box">
         `<tr><td colspan="4" style="padding:1px 11px 1px 22px;font-size:10px;font-weight:600;color:#0F2744;border-bottom:1px solid #F3F4F6">Net HT</td><td style="padding:1px 11px;text-align:right;font-size:10px;font-weight:600;color:#0F2744;border-bottom:1px solid #F3F4F6">${l.prixNet.toFixed(2)} €</td></tr>`;
       }
       return `<tr>
-      <td style="${hasRem ? 'border-bottom:none' : ''}">${l.name}${pBadge}</td>
+      <td style="${hasRem ? 'border-bottom:none' : ''}">${imgTag}${l.name}${pBadge}${descTag}</td>
       <td style="${hasRem ? 'border-bottom:none' : ''}">${DL[l.dur] || l.dur}</td>
       <td style="text-align:center;${hasRem ? 'border-bottom:none' : ''}">${l.qty || 1}</td>
       <td style="text-align:right;${hasRem ? 'border-bottom:none' : ''}">${(l.pu || l.prix).toFixed(2)} €</td>
@@ -203,8 +220,10 @@ ${optLines.length ? `
     <tbody>
       ${optLines.map(l => {
         const durL = DL[l.dur] || l.dur;
+        const oImg = l._image ? `<img src="${l._image}" style="width:50px;height:35px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:6px">` : '';
+        const oDesc = (l._protDesc || l._desc) ? `<br><span style="font-size:9px;color:#6B7280">${l._protDesc || l._desc}</span>` : '';
         return `<tr>
-          <td>${l.name}</td>
+          <td>${oImg}${l.name}${oDesc}</td>
           <td>${durL}</td>
           <td style="text-align:center">${l.qty || 1}</td>
           <td style="text-align:right">${(l.pu || l.prix).toFixed(2)} €</td>
@@ -233,7 +252,7 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
     const isF  = dv.doctype === 'facture';
     const km   = dv.km || 0;
     const kmt  = p.km || 1.5;
-    const allEmailLines = _calcLines(dv.lines);
+    const allEmailLines = _enrichLines(_calcLines(dv.lines));
     const emailLines   = allEmailLines.filter(l => !l.optional);
     const emailOptLines = allEmailLines.filter(l => l.optional);
     const sousTotal = emailLines.reduce((s, l) => s + l.prixNet, 0);
@@ -306,7 +325,7 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
     const isF = dv.doctype === 'facture';
     const km  = dv.km || 0;
     const kmt = p.km || 1.5;
-    const allPdfLines = _calcLines(dv.lines);
+    const allPdfLines = _enrichLines(_calcLines(dv.lines));
     const pdfLines   = allPdfLines.filter(l => !l.optional);
     const pdfOptLines = allPdfLines.filter(l => l.optional);
     const sousTotal = pdfLines.reduce((s, l) => s + l.prixNet, 0);
@@ -436,16 +455,26 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
     doc.setFont(undefined, 'normal');
     doc.setFontSize(9);
     pdfLines.forEach((l, i) => {
-      if (y > 260) { doc.addPage(); y = M; }
+      const descText = l._protDesc || l._desc || '';
+      const descLines = descText ? doc.splitTextToSize(descText, colX[1] - M - 6) : [];
+      const imgH = l._image ? 15 : 0;
+      const descH = descLines.length * 3.5;
+      const extraH = Math.max(imgH, descH);
+      const baseH = 7 + (l.remises?.length ? (l.remises.length + 1) * 4 : 0) + (extraH > 0 ? extraH : 0);
+      if (y + baseH > 270) { doc.addPage(); y = M; }
       if (i % 2 === 1) {
-        const rowH = 7 + (l.remises?.length ? (l.remises.length + 1) * 4 : 0);
         doc.setFillColor(249, 250, 251);
-        doc.rect(M, y, W - 2 * M, rowH, 'F');
+        doc.rect(M, y, W - 2 * M, baseH, 'F');
       }
       doc.setTextColor(17, 17, 17);
       doc.setFontSize(9);
       const durLabel = l.dur === 'epicerie' ? 'Épicerie' : l.dur === 'service' ? 'Service' : l.dur === 'protection' ? 'Protection' : (DL[l.dur] || l.dur);
-      doc.text(l.name.substring(0, 38), M + 3, y + 5);
+      const nameX = l._image ? M + 18 : M + 3;
+      if (l._image) {
+        try { doc.addImage(l._image, 'AUTO', M + 2, y + 1, 15, 15); } catch (e) { /* ignore */ }
+      }
+      const nameLines = doc.splitTextToSize(l.name, colX[1] - nameX - 2);
+      doc.text(nameLines[0] || l.name, nameX, y + 5);
       doc.text(durLabel, colX[1] + 2, y + 5);
       doc.text(String(l.qty || 1), colX[2] + 2, y + 5);
       doc.text((l.pu || l.prix).toFixed(2) + ' €', colX[3] + 2, y + 5);
@@ -453,6 +482,13 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
       doc.text(l.prix.toFixed(2) + ' €', W - M - 3, y + 5, { align: 'right' });
       doc.setFont(undefined, 'normal');
       y += 7;
+      if (descLines.length) {
+        doc.setFontSize(7);
+        doc.setTextColor(107, 114, 128);
+        doc.text(descLines, nameX, y + 2);
+        y += descH;
+        doc.setFontSize(9);
+      }
       // Remises par ligne
       if (l.remises?.length) {
         doc.setFontSize(7.5);
@@ -606,7 +642,7 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
     if (!dv) return;
     const p   = db.params || {};
     const ds  = _ds();
-    const allContratLines = _calcLines(dv.lines);
+    const allContratLines = _enrichLines(_calcLines(dv.lines));
     const lines    = allContratLines.filter(l => !l.optional);
     const contratOptLines = allContratLines.filter(l => l.optional);
     const sousTotal = lines.reduce((s, l) => s + l.prixNet, 0);
@@ -632,9 +668,11 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
       </tr></thead>
       <tbody>${lines.map(l => {
         const durLabel = l.dur === 'epicerie' ? 'Épicerie' : l.dur === 'service' ? 'Service' : l.dur === 'protection' ? 'Protection' : (DL[l.dur] || l.dur);
-        const protDesc = l._protDesc ? `<br><span style="font-size:9px;color:#6B7280">${l._protDesc}</span>` : '';
+        const descText = l._protDesc || l._desc || '';
+        const descSpan = descText ? `<br><span style="font-size:9px;color:#6B7280">${descText}</span>` : '';
+        const imgTag = l._image ? `<img src="${l._image}" style="width:40px;height:30px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:6px">` : '';
         return `<tr>
-          <td style="padding:6px 10px;border:1px solid #D1D5DB">${l.name}${protDesc}</td>
+          <td style="padding:6px 10px;border:1px solid #D1D5DB">${imgTag}${l.name}${descSpan}</td>
           <td style="padding:6px 10px;border:1px solid #D1D5DB;text-align:center">${durLabel}</td>
           <td style="padding:6px 10px;border:1px solid #D1D5DB;text-align:center">${l.qty || 1}</td>
           <td style="padding:6px 10px;border:1px solid #D1D5DB;text-align:right">${(l.pu || l.prix).toFixed(2)} €</td>

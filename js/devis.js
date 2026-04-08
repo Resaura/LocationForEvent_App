@@ -186,7 +186,7 @@ const Devis = (() => {
       return;
     }
 
-    _lines.push({ id: Date.now(), name, dur, qty, pu: prixHT / qty, prix: prixHT, prixHT, prixTTC, caut, tva, remises: [] });
+    _lines.push({ id: Date.now(), name, dur, qty, pu: prixHT / qty, prix: prixHT, prixHT, prixTTC, caut, tva, remises: [], _image: _selItem?.image || null, _desc: _selItem?.notes || '' });
 
     // Reset champs ligne
     _setVal('nd-mat-q', '');
@@ -308,10 +308,14 @@ const Devis = (() => {
       }
       const optClass = l.optional ? ' dv-line-optional' : '';
       const optBtn = `<button class="btn-optional${l.optional ? ' active' : ''}" onclick="Devis.toggleOptional(${l.id})" title="${l.optional ? 'Remettre inclus' : 'Passer en option'}"><i data-lucide="gift"></i></button>`;
+      const thumbHtml = l._image ? `<img src="${l._image}" class="dv-line-thumb">` : '';
+      const descText = l._protDesc || l._desc || '';
+      const descHtml = descText ? `<div class="dv-line-desc">${descText}</div>` : '';
       return `<div class="dv-line-wrap${optClass}">
         <div class="dv-line">
           <input type="checkbox" class="line-check" data-id="${l.id}" onchange="Devis.onLineCheck()">
-          <span class="dv-ln">${l.name}${badge}${optBadge}</span>
+          ${thumbHtml}
+          <div class="dv-ln">${l.name}${badge}${optBadge}${descHtml}</div>
           <span class="dv-dur">${DL[l.dur] || l.dur}</span>
           <span class="dv-qty">×${l.qty}</span>
           <span class="dv-pr">${l.prix.toFixed(2)} €</span>
@@ -709,6 +713,10 @@ const Devis = (() => {
     const displayName = (optNames === svc.nom || selectedOpts.length === 1 && selectedOpts[0] === svc.nom)
       ? svc.nom
       : `${svc.nom} — ${optNames}`;
+    const svcDesc = (svc.options || []).filter((o, i) => {
+      const cb = document.getElementById(`nd-svc-opt-${i}`);
+      return cb && cb.checked && o.description;
+    }).map(o => o.description).join(' · ');
     _lines.push({
       id:   Date.now(),
       name: displayName,
@@ -719,6 +727,7 @@ const Devis = (() => {
       caut: 0,
       tva:  svc.tva || 0,
       remises: [],
+      _desc: svcDesc || svc.description || '',
     });
 
     // Reset le picker
@@ -955,7 +964,7 @@ const Devis = (() => {
       retour: _getVal('nd-retour'),
       km:     parseFloat(_getVal('nd-km')) || 0,
       notes:  _getVal('nd-notes'),
-      lines:  JSON.parse(JSON.stringify(_lines)),
+      lines:  _lines.map(l => { const { _image, ...rest } = l; return JSON.parse(JSON.stringify(rest)); }),
       remises: remisesCopy,
       total:  Math.max(0, sousTotal - totalRemisesGlobales),
       doctype
@@ -1041,6 +1050,16 @@ const Devis = (() => {
     if (!dv) return;
     _editId  = id;
     _lines   = JSON.parse(JSON.stringify(dv.lines || []));
+    // Enrichir les lignes avec les images/notes du catalogue si absentes
+    _lines.forEach(l => {
+      if (l.dur !== 'epicerie' && l.dur !== 'service' && l.dur !== 'protection' && !l._image) {
+        const item = db.cat.find(i => i.name === l.name);
+        if (item) {
+          if (item.image) l._image = item.image;
+          if (item.notes && !l._desc) l._desc = item.notes;
+        }
+      }
+    });
     _remises = JSON.parse(JSON.stringify(dv.remises || []));
     App.go('nouveau-devis');
     setTimeout(() => {

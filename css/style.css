@@ -778,7 +778,9 @@ table.dt tbody tr:hover .row-actions { opacity: 1; }
   font-size: .82rem;
 }
 .dv-line .line-check { width: 15px; height: 15px; flex-shrink: 0; cursor: pointer; accent-color: var(--blue); }
-.dv-ln  { flex: 1; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.dv-ln  { flex: 1; font-weight: 500; min-width: 0; white-space: normal; overflow: visible; text-overflow: unset; word-break: break-word; line-height: 1.4; color: var(--text); }
+.dv-line-desc { font-size: 0.72rem; color: var(--grey); margin-top: 2px; white-space: normal; line-height: 1.4; font-weight: 400; }
+.dv-line-thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; flex-shrink: 0; border: 1px solid var(--border); }
 .dv-dur { font-size: .72rem; color: var(--text3); width: 84px; flex-shrink: 0; }
 .dv-qty { width: 28px; text-align: center; color: var(--text3); font-size: .75rem; flex-shrink: 0; }
 .dv-pr  { font-weight: 600; color: var(--text); width: 68px; text-align: right; flex-shrink: 0; }

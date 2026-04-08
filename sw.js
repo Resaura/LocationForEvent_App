@@ -7,7 +7,7 @@
 // RÈGLE : incrémenter CACHE_VERSION à chaque modification JS/CSS
 // ═══════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'lfe-v38';
+const CACHE_VERSION = 'lfe-v39';
 const STATIC = ['/', '/index.html', '/css/style.css', '/manifest.json'];
 
 // ── Install — cache uniquement les fichiers statiques de base ──
