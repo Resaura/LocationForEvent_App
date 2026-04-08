@@ -91,6 +91,9 @@
       <button class="s-item" data-page="services">
         <span class="ic"><i data-lucide="wrench"></i></span>Services
       </button>
+      <button class="s-item" data-page="contrats">
+        <span class="ic"><i data-lucide="shield"></i></span>Contrats &amp; Protection
+      </button>
       <button class="s-item" data-page="epicerie">
         <span class="ic"><i data-lucide="shopping-cart"></i></span>Épicerie
       </button>
@@ -426,6 +429,19 @@
               <div class="card-bd" id="nd-epi-picker"></div>
             </div>
 
+            <div class="card mb-3">
+              <div class="card-hd"><div class="card-title"><i data-lucide="shield"></i> Option Protection</div></div>
+              <div class="card-bd" id="nd-prot-picker">
+                <div class="fg">
+                  <select id="nd-prot-sel" onchange="Devis.onProtectionChange()" style="font-size:.82rem">
+                    <option value="">— Aucune protection —</option>
+                  </select>
+                </div>
+                <div id="nd-prot-info" style="display:none;font-size:.78rem;padding:8px;background:#F5F3FF;border-radius:6px;margin-bottom:8px"></div>
+                <button class="btn btn-ghost btn-sm fw" onclick="Devis.addProtectionLine()" id="nd-prot-add-btn" style="display:none"><i data-lucide="shield"></i> Ajouter au devis</button>
+              </div>
+            </div>
+
             <div class="card">
               <div class="card-hd">
                 <div class="card-title"><i data-lucide="clipboard"></i> Récapitulatif</div>
@@ -484,6 +500,68 @@
               <div class="ei"><i data-lucide="wrench"></i></div>
               <h3>Aucun service</h3>
               <p>Créez vos premières prestations facturables</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════ CONTRATS & PROTECTION ════════════ -->
+      <div class="page" id="page-contrats">
+        <div class="g2">
+          <div>
+            <!-- Section A — Modèle de contrat -->
+            <div class="card mb-3">
+              <div class="card-hd">
+                <div class="card-title"><i data-lucide="file-text"></i> Modèle de contrat</div>
+                <div class="flex gap-2">
+                  <button class="btn btn-ghost btn-sm" onclick="Contrats.resetTemplate()"><i data-lucide="rotate-ccw"></i> Réinitialiser</button>
+                  <button class="btn btn-primary btn-sm" onclick="Contrats.saveTemplate()"><i data-lucide="save"></i> Sauvegarder</button>
+                </div>
+              </div>
+              <div class="card-bd">
+                <textarea id="ct-template-editor" rows="20" style="font-family:monospace;font-size:.78rem;line-height:1.5;width:100%;resize:vertical" oninput="Contrats._updatePreview()"></textarea>
+                <div style="margin-top:8px;font-size:.72rem;color:var(--grey)">
+                  <strong>Variables disponibles :</strong><br>
+                  <code>{LOUEUR_NOM}</code> <code>{LOUEUR_ADRESSE}</code> <code>{LOUEUR_TEL}</code> <code>{LOUEUR_EMAIL}</code> <code>{LOUEUR_SIRET}</code><br>
+                  <code>{CLIENT_NOM}</code> <code>{CLIENT_TEL}</code> <code>{CLIENT_EMAIL}</code><br>
+                  <code>{NUM_CONTRAT}</code> <code>{DATE_EMISSION}</code> <code>{DATE_RECUP}</code> <code>{HEURE_RECUP}</code> <code>{DATE_RETOUR}</code> <code>{HEURE_RETOUR}</code><br>
+                  <code>{LIEU_EVENEMENT}</code> <code>{TYPE_EVENEMENT}</code><br>
+                  <code>{TABLEAU_MATERIEL}</code> <code>{SOUS_TOTAL_HT}</code> <code>{TVA_DETAIL}</code> <code>{TOTAL_TTC}</code> <code>{CAUTION}</code><br>
+                  <code>{VILLE_LOUEUR}</code> <code>{DATE_SIGNATURE}</code>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section C — Mentions légales contrat -->
+            <div class="card mb-3">
+              <div class="card-hd">
+                <div class="card-title"><i data-lucide="align-left"></i> Mentions légales du contrat</div>
+                <button class="btn btn-primary btn-sm" onclick="Contrats.saveMentions()"><i data-lucide="save"></i> Sauvegarder</button>
+              </div>
+              <div class="card-bd">
+                <textarea id="ct-mentions" rows="5" style="width:100%;font-size:.82rem" placeholder="Mentions légales personnalisées affichées en bas du contrat…"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <!-- Aperçu -->
+            <div class="card mb-3">
+              <div class="card-hd"><div class="card-title"><i data-lucide="eye"></i> Aperçu du contrat</div></div>
+              <div class="card-bd">
+                <div id="ct-preview" style="font-size:.78rem;line-height:1.6;max-height:500px;overflow-y:auto;padding:12px;background:#F9FAFB;border-radius:8px;white-space:pre-wrap;font-family:monospace"></div>
+              </div>
+            </div>
+
+            <!-- Section B — Options Protection -->
+            <div class="card mb-3">
+              <div class="card-hd">
+                <div class="card-title"><i data-lucide="shield"></i> Options Protection</div>
+                <button class="btn btn-primary btn-sm" onclick="Contrats.openProtModal()">+ Créer une option</button>
+              </div>
+              <div class="card-bd">
+                <div id="ct-prot-list"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -965,6 +1043,49 @@
   </div>
 </div>
 
+<!-- Modal Option Protection -->
+<div class="overlay" id="m-prot">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-hd">
+      <div class="modal-title" id="m-prot-title">Nouvelle option protection</div>
+      <button class="modal-x" onclick="App.closeModal('m-prot')">✕</button>
+    </div>
+    <div class="modal-bd">
+      <input type="hidden" id="m-prot-id">
+      <div class="fg"><label class="fl">Nom *</label><input type="text" id="m-prot-nom" placeholder="Ex: Option Protection Standard"></div>
+      <div class="fg"><label class="fl">Description</label><input type="text" id="m-prot-desc" placeholder="Ex: Dommages accidentels pris en charge jusqu'à 300 €"></div>
+      <div class="r2">
+        <div class="fg">
+          <label class="fl">Type de tarif</label>
+          <select id="m-prot-type">
+            <option value="fixe">Montant fixe (€)</option>
+            <option value="pourcentage">Pourcentage du total HT (%)</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="fl">Valeur *</label>
+          <input type="number" id="m-prot-valeur" placeholder="Ex: 30" min="0" step="0.01">
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Plafond de couverture (€)</label>
+        <input type="number" id="m-prot-plafond" placeholder="Ex: 300" min="0" step="1">
+      </div>
+      <div class="fg">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.84rem">
+          <input type="checkbox" id="m-prot-actif" checked>
+          Actif (proposable dans les devis)
+        </label>
+      </div>
+      <div class="sep"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="Contrats.saveProtection()"><i data-lucide="save"></i> Enregistrer</button>
+        <button class="btn btn-ghost" onclick="App.closeModal('m-prot')">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Service -->
 <div class="overlay" id="m-svc">
   <div class="modal modal-lg">
@@ -1153,6 +1274,7 @@
 <script src="js/calendrier.js"></script>
 <script src="js/stats.js"></script>
 <script src="js/paiements.js"></script>
+<script src="js/contrats.js"></script>
 <script src="js/print.js"></script>
 <script src="js/pwa.js"></script>
 <script>

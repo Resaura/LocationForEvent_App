@@ -141,8 +141,9 @@ ${(dv.client || dv.recup) ? `<div class="client-box">
   </tr></thead>
   <tbody>
     ${lines.map(l => {
-      const pBadge = l.dur === 'epicerie' ? ' <span style="font-size:9px;background:#FEF3C7;color:#D97706;padding:1px 5px;border-radius:99px">Épicerie</span>'
-                   : l.dur === 'service'  ? ' <span style="font-size:9px;background:#EFF6FF;color:#1D4ED8;padding:1px 5px;border-radius:99px">Service</span>'
+      const pBadge = l.dur === 'epicerie'   ? ' <span style="font-size:9px;background:#FEF3C7;color:#D97706;padding:1px 5px;border-radius:99px">Épicerie</span>'
+                   : l.dur === 'service'    ? ' <span style="font-size:9px;background:#EFF6FF;color:#1D4ED8;padding:1px 5px;border-radius:99px">Service</span>'
+                   : l.dur === 'protection' ? ' <span style="font-size:9px;background:#F5F3FF;color:#7C3AED;padding:1px 5px;border-radius:99px">Protection</span>'
                    : '';
       const hasRem = l.remises && l.remises.length > 0;
       let remRows = '';
@@ -402,7 +403,7 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
       }
       doc.setTextColor(17, 17, 17);
       doc.setFontSize(9);
-      const durLabel = l.dur === 'epicerie' ? 'Épicerie' : l.dur === 'service' ? 'Service' : (DL[l.dur] || l.dur);
+      const durLabel = l.dur === 'epicerie' ? 'Épicerie' : l.dur === 'service' ? 'Service' : l.dur === 'protection' ? 'Protection' : (DL[l.dur] || l.dur);
       doc.text(l.name.substring(0, 38), M + 3, y + 5);
       doc.text(durLabel, colX[1] + 2, y + 5);
       doc.text(String(l.qty || 1), colX[2] + 2, y + 5);
@@ -523,32 +524,88 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
     const totalTTC = tot + totalTVA;
     const c1 = ds.couleurPrimaire;
     const fontFam = _fontCss(ds.police);
-
-    // Extraire ville depuis adresse loueur
     const ville = (p.adr || '').split(',').pop()?.trim() || '________';
 
-    const linesHtml = lines.map(l => {
-      const durLabel = l.dur === 'epicerie' ? 'Épicerie' : l.dur === 'service' ? 'Service' : (DL[l.dur] || l.dur);
-      return `<tr>
-        <td style="padding:6px 10px;border:1px solid #D1D5DB">${l.name}</td>
-        <td style="padding:6px 10px;border:1px solid #D1D5DB;text-align:center">${durLabel}</td>
-        <td style="padding:6px 10px;border:1px solid #D1D5DB;text-align:center">${l.qty || 1}</td>
-        <td style="padding:6px 10px;border:1px solid #D1D5DB;text-align:right">${(l.pu || l.prix).toFixed(2)} €</td>
-        <td style="padding:6px 10px;border:1px solid #D1D5DB;text-align:right;font-weight:600">${l.prixNet.toFixed(2)} €</td>
-      </tr>`;
-    }).join('');
+    // Tableau matériel HTML
+    const tableauHtml = `<table>
+      <thead><tr>
+        <th>Désignation</th>
+        <th style="text-align:center">Durée</th>
+        <th style="text-align:center">Qté</th>
+        <th style="text-align:right">P.U. HT</th>
+        <th style="text-align:right">Total HT</th>
+      </tr></thead>
+      <tbody>${lines.map(l => {
+        const durLabel = l.dur === 'epicerie' ? 'Épicerie' : l.dur === 'service' ? 'Service' : l.dur === 'protection' ? 'Protection' : (DL[l.dur] || l.dur);
+        const protDesc = l._protDesc ? `<br><span style="font-size:9px;color:#6B7280">${l._protDesc}</span>` : '';
+        return `<tr>
+          <td style="padding:6px 10px;border:1px solid #D1D5DB">${l.name}${protDesc}</td>
+          <td style="padding:6px 10px;border:1px solid #D1D5DB;text-align:center">${durLabel}</td>
+          <td style="padding:6px 10px;border:1px solid #D1D5DB;text-align:center">${l.qty || 1}</td>
+          <td style="padding:6px 10px;border:1px solid #D1D5DB;text-align:right">${(l.pu || l.prix).toFixed(2)} €</td>
+          <td style="padding:6px 10px;border:1px solid #D1D5DB;text-align:right;font-weight:600">${l.prixNet.toFixed(2)} €</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
 
-    let tvaHtml = '';
+    // TVA détail
+    let tvaDetailStr = '';
     if (totalTVA > 0) {
-      tvaHtml = Object.entries(tvaMap)
+      tvaDetailStr = Object.entries(tvaMap)
         .filter(([, v]) => v.montantTva > 0)
-        .map(([taux, v]) => `<div style="text-align:right">TVA ${(taux * 100).toFixed(1).replace('.0', '')}% : ${v.montantTva.toFixed(2)} €</div>`)
-        .join('');
+        .map(([taux, v]) => `TVA ${(taux * 100).toFixed(1).replace('.0', '')}% : ${v.montantTva.toFixed(2)} €`)
+        .join('\n');
     }
 
-    // Client info
-    const cli = db.clients?.find(c => c.nom === dv.client);
-    const cliAdr = cli?.adr || '';
+    // Extraire date/heure depuis datetime-local
+    const recupDate = dv.recup ? fmtDate(dv.recup.split('T')[0]) : '________';
+    const recupHeure = dv.recup && dv.recup.includes('T') ? dv.recup.split('T')[1].substring(0,5) : '__:__';
+    const retourDate = dv.retour ? fmtDate(dv.retour.split('T')[0]) : '________';
+    const retourHeure = dv.retour && dv.retour.includes('T') ? dv.retour.split('T')[1].substring(0,5) : '__:__';
+
+    // Charger le modèle
+    const template = (typeof Contrats !== 'undefined') ? Contrats.getTemplate() : db.contrat_template || '';
+
+    // Map des variables
+    const vars = {
+      '{LOUEUR_NOM}':      p.nom || '—',
+      '{LOUEUR_ADRESSE}':  p.adr || '—',
+      '{LOUEUR_TEL}':      p.tel || '—',
+      '{LOUEUR_EMAIL}':    p.email || '—',
+      '{LOUEUR_SIRET}':    p.siret ? 'SIRET : ' + p.siret : '',
+      '{CLIENT_NOM}':      dv.client || '—',
+      '{CLIENT_TEL}':      dv.tel || '—',
+      '{CLIENT_EMAIL}':    dv.email || '—',
+      '{NUM_CONTRAT}':     dv.num || '—',
+      '{DATE_EMISSION}':   fmtDate(dv.date || today()),
+      '{DATE_RECUP}':      recupDate,
+      '{HEURE_RECUP}':     recupHeure,
+      '{DATE_RETOUR}':     retourDate,
+      '{HEURE_RETOUR}':    retourHeure,
+      '{LIEU_EVENEMENT}':  dv.lieu || '—',
+      '{TYPE_EVENEMENT}':  dv.type || '—',
+      '{TABLEAU_MATERIEL}': '__TABLE__',
+      '{SOUS_TOTAL_HT}':   'Sous-total HT : ' + sousTotal.toFixed(2) + ' €',
+      '{TVA_DETAIL}':      tvaDetailStr || 'Pas de TVA applicable',
+      '{TOTAL_TTC}':       'Total TTC : ' + totalTTC.toFixed(2) + ' €',
+      '{CAUTION}':         caut + ' €',
+      '{VILLE_LOUEUR}':    ville,
+      '{DATE_SIGNATURE}':  fmtDate(today()),
+    };
+
+    let body = template;
+    for (const [k, v] of Object.entries(vars)) {
+      body = body.split(k).join(v);
+    }
+
+    // Convertir en HTML : remplacer le placeholder table, convertir bullets et sauts de ligne
+    body = body.replace(/__TABLE__/g, tableauHtml);
+    body = body.replace(/^• (.+)$/gm, '<li>$1</li>');
+    body = body.replace(/(<li>.*<\/li>\n?)+/gs, m => '<ul>' + m + '</ul>');
+    body = body.replace(/\n/g, '<br>');
+
+    // Mentions légales contrat
+    const mentions = db.contrat_mentions || '';
 
     const w = window.open('', '_blank');
     if (!w) { App.toast('Autorisez les popups', 'warn'); return; }
@@ -563,20 +620,15 @@ body{font-family:${fontFam};font-size:12px;color:#111;margin:0;padding:30px 40px
 h1{font-size:18px;font-weight:800;text-align:center;color:${c1};margin:0;letter-spacing:.5px}
 h2{font-size:11px;text-align:center;color:#6B7280;margin:2px 0 16px;font-weight:500;letter-spacing:.3px}
 .sep{border-top:2px solid ${c1};margin:14px 0}
-.sep-light{border-top:1px solid #E5E7EB;margin:10px 0}
-.article{margin-bottom:14px}
-.article-title{font-size:12px;font-weight:700;color:${c1};margin-bottom:4px;border-bottom:1px solid #D1D5DB;padding-bottom:2px}
-.indent{padding-left:14px}
+.contrat-body{font-size:12px;line-height:1.7}
 table{width:100%;border-collapse:collapse;margin:8px 0;font-size:11px}
 th{background:${c1};color:#fff;padding:6px 10px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.3px}
-.totals{text-align:right;font-size:12px;margin-top:6px;line-height:1.8}
-.totals-main{font-weight:800;font-size:13px;color:${c1}}
+ul{margin:4px 0;padding-left:20px}
+ul li{margin-bottom:2px}
 .sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:10px}
 .sig-box{text-align:center}
 .sig-line{border-bottom:1px solid #111;height:50px;margin-top:8px}
 .sig-note{font-size:10px;color:#6B7280;margin-top:6px}
-ul{margin:4px 0;padding-left:20px}
-ul li{margin-bottom:2px}
 .foot{text-align:center;font-size:10px;color:#9CA3AF;margin-top:20px;border-top:1px solid #E5E7EB;padding-top:10px}
 @media print{body{padding:18px 30px}}
 </style></head><body>
@@ -586,129 +638,8 @@ ul li{margin-bottom:2px}
 <h2>N° ${dv.num || '—'} — ${fmtDate(dv.date || today())}</h2>
 <div class="sep"></div>
 
-<div class="article">
-  <div class="article-title">ARTICLE 1 — PARTIES</div>
-  <div class="indent">
-    <strong>LE LOUEUR :</strong><br>
-    ${p.nom || '—'}${p.adr ? ' — ' + p.adr : ''}${p.tel ? ' — ' + p.tel : ''}${p.email ? ' — ' + p.email : ''}
-    ${p.siret ? '<br>SIRET : ' + p.siret : ''}
-  </div>
-  <div class="indent" style="margin-top:6px">
-    <strong>LE LOCATAIRE :</strong><br>
-    ${dv.client || '—'}${dv.tel ? ' — ' + dv.tel : ''}${dv.email ? ' — ' + dv.email : ''}
-    ${cliAdr ? '<br>' + cliAdr : ''}
-  </div>
-</div>
-
-<div class="article">
-  <div class="article-title">ARTICLE 2 — OBJET DU CONTRAT</div>
-  <div class="indent">
-    Le Loueur met à disposition du Locataire le matériel suivant${dv.type ? ' pour l\'événement : <strong>' + dv.type + '</strong>' : ''}.
-    ${dv.lieu ? '<br>Lieu de l\'événement : <strong>' + dv.lieu + '</strong>' : ''}
-  </div>
-  <table>
-    <thead><tr>
-      <th>Désignation</th>
-      <th style="text-align:center">Durée</th>
-      <th style="text-align:center">Qté</th>
-      <th style="text-align:right">P.U. HT</th>
-      <th style="text-align:right">Total HT</th>
-    </tr></thead>
-    <tbody>${linesHtml}</tbody>
-  </table>
-  <div class="totals">
-    <div>Sous-total HT : ${sousTotal.toFixed(2)} €</div>
-    ${dvRemises.length ? dvRemises.map(r => {
-      const lab = r.type === 'pourcentage' ? '(-' + r.valeur + '%)' : '(-' + r.valeur.toFixed(2) + ' €)';
-      return '<div style="color:#DC2626">Remise ' + r.nom + ' ' + lab + ' : -' + (r.montant_deduit || 0).toFixed(2) + ' €</div>';
-    }).join('') + '<div>Total HT après remises : ' + tot.toFixed(2) + ' €</div>' : ''}
-    ${tvaHtml}
-    <div class="totals-main">Total TTC : ${totalTTC.toFixed(2)} €</div>
-  </div>
-</div>
-
-<div class="article">
-  <div class="article-title">ARTICLE 3 — DURÉE DE LOCATION</div>
-  <div class="indent">
-    ${dv.recup ? 'Date et heure de mise à disposition : <strong>' + fmtDt(dv.recup) + '</strong><br>' : ''}
-    ${dv.retour ? 'Date et heure de restitution prévue : <strong>' + fmtDt(dv.retour) + '</strong><br>' : ''}
-    Toute prolongation devra faire l'objet d'un accord écrit préalable du Loueur et donnera lieu à une facturation complémentaire.
-  </div>
-</div>
-
-<div class="article">
-  <div class="article-title">ARTICLE 4 — PRIX ET MODALITÉS DE PAIEMENT</div>
-  <div class="indent">
-    Montant total TTC de la location : <strong>${totalTTC.toFixed(2)} €</strong><br>
-    Dépôt de garantie (caution) : <strong>${caut} €</strong><br>
-    La caution sera restituée dans les 48h suivant le retour du matériel en bon état.<br>
-    Modalités de paiement : virement bancaire / espèces / chèque.
-  </div>
-</div>
-
-<div class="article">
-  <div class="article-title">ARTICLE 5 — CONDITIONS D'UTILISATION</div>
-  <div class="indent">
-    Le Locataire s'engage à :
-    <ul>
-      <li>Utiliser le matériel conformément à sa destination et aux instructions du Loueur</li>
-      <li>Ne pas prêter, sous-louer ou céder le matériel à des tiers</li>
-      <li>Protéger le matériel contre toute dégradation, vol ou perte</li>
-      <li>Restituer le matériel dans l'état dans lequel il a été remis, propre et en bon état de fonctionnement</li>
-      <li>Signaler immédiatement tout incident ou dommage au Loueur</li>
-    </ul>
-  </div>
-</div>
-
-<div class="article">
-  <div class="article-title">ARTICLE 6 — RESPONSABILITÉ ET TRANSFERT DE GARDE</div>
-  <div class="indent">
-    La responsabilité et la garde juridique du matériel sont transférées au Locataire dès la mise à disposition du matériel.
-    Le Locataire assume l'entière responsabilité du matériel pendant toute la durée de la location.<br>
-    Il est conseillé au Locataire de souscrire une assurance responsabilité civile couvrant les dommages pouvant survenir pendant la période de location.
-  </div>
-</div>
-
-<div class="article">
-  <div class="article-title">ARTICLE 7 — DOMMAGES ET PERTE</div>
-  <div class="indent">
-    En cas de dégradation, perte ou vol du matériel :
-    <ul>
-      <li>Les frais de réparation ou de remplacement seront à la charge du Locataire, sur présentation de justificatifs</li>
-      <li>La caution sera retenue en tout ou partie selon les dommages constatés</li>
-      <li>Si le coût des dommages excède le montant de la caution, le Locataire s'engage à régler le solde restant dû</li>
-    </ul>
-  </div>
-</div>
-
-<div class="article">
-  <div class="article-title">ARTICLE 8 — ANNULATION</div>
-  <div class="indent">
-    Toute annulation doit être notifiée par écrit au Loueur.
-    <ul>
-      <li>Annulation à plus de 30 jours : remboursement intégral de l'acompte</li>
-      <li>Annulation entre 15 et 30 jours : retenue de 50% de l'acompte</li>
-      <li>Annulation à moins de 15 jours : acompte intégralement retenu</li>
-    </ul>
-  </div>
-</div>
-
-<div class="article">
-  <div class="article-title">ARTICLE 9 — ÉTAT DU MATÉRIEL</div>
-  <div class="indent">
-    Le Loueur certifie que le matériel a été vérifié et nettoyé avant sa mise à disposition.
-    Le Locataire reconnaît recevoir le matériel en bon état de fonctionnement.<br>
-    Un contrôle sera effectué au retour du matériel.
-    Le Loueur dispose de 48 heures pour signaler tout dommage constaté après restitution.
-  </div>
-</div>
-
-<div class="article">
-  <div class="article-title">ARTICLE 10 — LITIGES</div>
-  <div class="indent">
-    En cas de litige, les parties s'engagent à rechercher une solution amiable.
-    À défaut, le litige sera soumis aux tribunaux compétents du ressort du siège du Loueur, conformément au droit français.
-  </div>
+<div class="contrat-body">
+${body}
 </div>
 
 <div class="sep"></div>
@@ -737,6 +668,7 @@ ul li{margin-bottom:2px}
   Précédée de la mention manuscrite "Lu et approuvé"
 </div>
 
+${mentions ? `<div class="foot">${mentions}</div>` : ''}
 <div class="foot">${p.nom || 'LocationForEvent'}${p.tel ? ' · ' + p.tel : ''}${p.site ? ' · ' + p.site : ''}</div>
 
 <script>window.onload=()=>window.print();<\/script>

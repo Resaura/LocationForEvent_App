@@ -85,6 +85,7 @@ const Devis = (() => {
     fillTypeSelect('nd-type');
     renderServicePicker();
     renderEpiceriePicker();
+    renderProtectionPicker();
     _renderRemiseSelect();
     // Badge de numéro si édition
     const badge = document.getElementById('nd-num-badge');
@@ -285,6 +286,8 @@ const Devis = (() => {
         ? '<span style="font-size:.65rem;background:#FEF3C7;color:#D97706;padding:1px 6px;border-radius:99px;font-weight:600;margin-left:4px"><i data-lucide="shopping-cart"></i> Épicerie</span>'
         : l.dur === 'service'
         ? '<span style="font-size:.65rem;background:#EFF6FF;color:#1D4ED8;padding:1px 6px;border-radius:99px;font-weight:600;margin-left:4px"><i data-lucide="wrench"></i> Service</span>'
+        : l.dur === 'protection'
+        ? '<span style="font-size:.65rem;background:#F5F3FF;color:#7C3AED;padding:1px 6px;border-radius:99px;font-weight:600;margin-left:4px"><i data-lucide="shield"></i> Protection</span>'
         : '';
       const hasRem = l.remises && l.remises.length > 0;
 
@@ -825,7 +828,82 @@ const Devis = (() => {
     App.toast('Produit ajouté ✅', 'ok');
   }
 
-  // ── Construire l'objet devis ──────────────────────────────
+  // ── Protection picker ──────────────────────────────────────
+  function renderProtectionPicker() {
+    const sel = document.getElementById('nd-prot-sel');
+    if (!sel) return;
+    const actives = (db.options_protection || []).filter(o => o.actif);
+    sel.innerHTML = '<option value="">— Aucune protection —</option>' +
+      actives.map(o => {
+        const prix = o.type_tarif === 'pourcentage' ? `${o.valeur}% du total HT` : `${o.valeur.toFixed(2)} €`;
+        return `<option value="${o.id}">${o.nom} (${prix})</option>`;
+      }).join('');
+    const info = document.getElementById('nd-prot-info');
+    const btn  = document.getElementById('nd-prot-add-btn');
+    if (info) info.style.display = 'none';
+    if (btn) btn.style.display = 'none';
+  }
+
+  function onProtectionChange() {
+    const sel  = document.getElementById('nd-prot-sel');
+    const info = document.getElementById('nd-prot-info');
+    const btn  = document.getElementById('nd-prot-add-btn');
+    if (!sel || !info || !btn) return;
+    const id = parseInt(sel.value);
+    if (!id) { info.style.display = 'none'; btn.style.display = 'none'; return; }
+    const o = db.options_protection.find(x => x.id === id);
+    if (!o) return;
+    let prixCalc;
+    if (o.type_tarif === 'pourcentage') {
+      const sousTotal = _lines.reduce((s, l) => s + (l.prixNet != null ? l.prixNet : l.prix), 0);
+      prixCalc = arrondi(sousTotal * o.valeur / 100);
+    } else {
+      prixCalc = o.valeur;
+    }
+    info.style.display = 'block';
+    info.innerHTML = `<div style="font-weight:600;color:var(--purple)">${o.nom} — ${prixCalc.toFixed(2)} €</div>
+      <div style="color:var(--grey);margin-top:2px">${o.description || ''}</div>
+      <div style="color:var(--grey);margin-top:2px">Couvre jusqu'à ${o.plafond_couverture} € de dommages</div>`;
+    btn.style.display = '';
+  }
+
+  function addProtectionLine() {
+    const sel = document.getElementById('nd-prot-sel');
+    if (!sel) return;
+    const id = parseInt(sel.value);
+    if (!id) { App.toast('Sélectionnez une option', 'warn'); return; }
+    const o = db.options_protection.find(x => x.id === id);
+    if (!o) return;
+    let prixCalc;
+    if (o.type_tarif === 'pourcentage') {
+      const sousTotal = _lines.reduce((s, l) => s + (l.prixNet != null ? l.prixNet : l.prix), 0);
+      prixCalc = arrondi(sousTotal * o.valeur / 100);
+    } else {
+      prixCalc = o.valeur;
+    }
+    _lines.push({
+      id:   Date.now(),
+      name: o.nom,
+      dur:  'protection',
+      qty:  1,
+      pu:   prixCalc,
+      prix: prixCalc,
+      caut: 0,
+      tva:  0,
+      remises: [],
+      _protDesc: o.description || '',
+      _protPlafond: o.plafond_couverture || 0,
+    });
+    sel.value = '';
+    const info = document.getElementById('nd-prot-info');
+    const btn  = document.getElementById('nd-prot-add-btn');
+    if (info) info.style.display = 'none';
+    if (btn) btn.style.display = 'none';
+    renderLines();
+    App.toast('Protection ajoutée ✅', 'ok');
+  }
+
+  // ── Construire l'objet devis ──────���────────────���──────────
   function _buildData(doctype = 'devis') {
     // Recalculer remises par ligne
     _lines.forEach(l => _applyLineRemises(l));
@@ -1085,7 +1163,8 @@ const Devis = (() => {
            addRemise, removeRemise, _onGlobalRemiseChange,
            onLineCheck, deselectAll, applyRemiseToSelected, removeLineRemise, _onSelRemiseChange,
            renderServicePicker, updateServiceOptions, refreshServiceTotal, addServiceLine,
-           renderEpiceriePicker, epiSearch, pickEpi, epiCalc, addEpiLine };
+           renderEpiceriePicker, epiSearch, pickEpi, epiCalc, addEpiLine,
+           renderProtectionPicker, onProtectionChange, addProtectionLine };
 })();
 
 
@@ -1346,8 +1425,9 @@ const Historique = (() => {
         </tr></thead>
         <tbody>
           ${lines.map(l => {
-            const lnBadge = l.dur === 'epicerie' ? ' <span style="font-size:.6rem;background:#FEF3C7;color:#D97706;padding:1px 5px;border-radius:99px"><i data-lucide="shopping-cart"></i></span>'
-                          : l.dur === 'service'  ? ' <span style="font-size:.6rem;background:#EFF6FF;color:#1D4ED8;padding:1px 5px;border-radius:99px"><i data-lucide="wrench"></i></span>'
+            const lnBadge = l.dur === 'epicerie'   ? ' <span style="font-size:.6rem;background:#FEF3C7;color:#D97706;padding:1px 5px;border-radius:99px"><i data-lucide="shopping-cart"></i></span>'
+                          : l.dur === 'service'    ? ' <span style="font-size:.6rem;background:#EFF6FF;color:#1D4ED8;padding:1px 5px;border-radius:99px"><i data-lucide="wrench"></i></span>'
+                          : l.dur === 'protection' ? ' <span style="font-size:.6rem;background:#F5F3FF;color:#7C3AED;padding:1px 5px;border-radius:99px"><i data-lucide="shield"></i></span>'
                           : '';
             const hasRem = l.remises && l.remises.length > 0;
             let remRows = '';

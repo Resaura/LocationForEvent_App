@@ -17,7 +17,10 @@ let db = {
   epicerie:        [],   // produits alimentaires & consommables
   types_evenement: [],   // types d'événements (noms)
   paiements:       [],   // suivi paiements Stripe
-  remises:         [],   // remises configurées
+  remises:              [],   // remises configurées
+  options_protection:   [],   // options protection
+  contrat_template:     null, // modèle contrat personnalisé
+  contrat_mentions:     '',   // mentions légales contrat
 };
 
 // ─── CONSTANTES ──────────────────────────────────────────────
@@ -28,8 +31,9 @@ const DL = {
   '2s':     '2 Semaines',
   '3s':     '3 Semaines',
   mois:     '1 Mois',
-  service:  'Prestation',
-  epicerie: 'Épicerie',
+  service:    'Prestation',
+  epicerie:   'Épicerie',
+  protection: 'Protection',
 };
 
 const DA_DEFAULT = [
@@ -76,6 +80,7 @@ const PAGE_TITLES = {
   'services':      'Prestations & Services',
   'epicerie':      'Épicerie & Consommables',
   'paiements':     'Paiements',
+  'contrats':      'Contrats & Protection',
   'parametres':    'Paramètres',
 };
 
@@ -120,6 +125,7 @@ const App = {
       'services':      () => typeof Services !== 'undefined' && Services.render(),
       'epicerie':      () => typeof Epicerie !== 'undefined' && Epicerie.render(),
       'paiements':     () => typeof Paiements !== 'undefined' && Paiements.render(),
+      'contrats':      () => typeof Contrats !== 'undefined' && Contrats.render(),
       'parametres':    () => { Params.render(); App._updateStorageInfo(); },
     };
     if (map[page]) map[page]();
@@ -512,13 +518,16 @@ const App = {
     });
 
     try {
-      const [data, svcRes, epiRes, teRes, payRes, remRes] = await Promise.all([
+      const [data, svcRes, epiRes, teRes, payRes, remRes, protRes, cfgTplRes, cfgMenRes] = await Promise.all([
         sbLoad(),
         sb.from('services').select('*').order('id'),
         sb.from('epicerie').select('*').order('id'),
         sb.from('types_evenement').select('*').order('id'),
         sb.from('paiements').select('*').order('id'),
         sb.from('remises').select('*').order('id'),
+        sb.from('options_protection').select('*').order('id'),
+        sb.from('config').select('*').eq('key', 'contrat_template').maybeSingle(),
+        sb.from('config').select('*').eq('key', 'contrat_mentions').maybeSingle(),
       ]);
       const hasData = data.cat.length || data.devis.length || data.amort.length;
 
@@ -561,6 +570,20 @@ const App = {
       db.remises = remRes.data || [];
       if (!db.remises.length && typeof Remises !== 'undefined') {
         await Remises.seedDefaults();
+      }
+
+      // Charger options protection
+      db.options_protection = protRes.data || [];
+      if (!db.options_protection.length && typeof Contrats !== 'undefined') {
+        await Contrats.seedDefaults();
+      }
+
+      // Charger config contrat
+      if (cfgTplRes.data?.value) {
+        try { db.contrat_template = JSON.parse(cfgTplRes.data.value); } catch (e) { db.contrat_template = null; }
+      }
+      if (cfgMenRes.data?.value) {
+        try { db.contrat_mentions = JSON.parse(cfgMenRes.data.value); } catch (e) { db.contrat_mentions = ''; }
       }
 
       App.setConnStatus(true);
