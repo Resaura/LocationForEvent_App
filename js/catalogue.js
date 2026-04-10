@@ -5,6 +5,7 @@
 const Catalogue = (() => {
   let _filCat    = 'Tous';
   let _filSearch = '';
+  let _catFilter = '';       // filtre de recherche sur les catégories
   let _pendingImage = null; // base64 image en attente de sauvegarde
 
   // ── Rendu principal ────────────────────────────────────────
@@ -17,7 +18,10 @@ const Catalogue = (() => {
     const el = document.getElementById('cat-chips');
     if (!el) return;
     const cats = ['Tous', ...(db.categories?.length ? db.categories : [])];
-    el.innerHTML = cats.map(c =>
+    const visible = _catFilter
+      ? cats.filter(c => c === 'Tous' || c.toLowerCase().includes(_catFilter))
+      : cats;
+    el.innerHTML = visible.map(c =>
       `<button class="chip${c === _filCat ? ' on' : ''}" onclick="Catalogue.setFilter('${c}')">${c}</button>`
     ).join('');
   }
@@ -25,9 +29,10 @@ const Catalogue = (() => {
   function _filtered() {
     return db.cat.filter(i => {
       const matchCat    = _filCat === 'Tous' || i.cat === _filCat;
+      const matchCatFilter = !_catFilter || (i.cat || '').toLowerCase().includes(_catFilter);
       const matchSearch = !_filSearch || i.name.toLowerCase().includes(_filSearch) ||
                           (i.notes || '').toLowerCase().includes(_filSearch);
-      return matchCat && matchSearch;
+      return matchCat && matchCatFilter && matchSearch;
     });
   }
 
@@ -80,6 +85,13 @@ const Catalogue = (() => {
   function filter() {
     const searchEl = document.getElementById('cat-search');
     _filSearch = searchEl ? searchEl.value.toLowerCase().trim() : '';
+    _renderTable();
+  }
+
+  function filterCats() {
+    const el = document.getElementById('cat-cat-filter');
+    _catFilter = el ? el.value.toLowerCase().trim() : '';
+    _buildChips();
     _renderTable();
   }
 
@@ -318,6 +330,6 @@ const Catalogue = (() => {
   }
 
   // ── API publique ──────────────────────────────────────────
-  return { render, filter, setFilter, openModal, previewPrix, syncPrix, syncTVA, save, del, exportCsv, onImageChange, removeImage };
+  return { render, filter, filterCats, setFilter, openModal, previewPrix, syncPrix, syncTVA, save, del, exportCsv, onImageChange, removeImage };
 })();
 window.Catalogue = Catalogue;

@@ -54,6 +54,8 @@ const Epicerie = (() => {
   function render() {
     _buildChips();
     _renderList();
+    _renderCatList();
+    _renderConsList();
   }
 
   // ── Chips catégorie ──────────────────────────────────────
@@ -62,7 +64,8 @@ const Epicerie = (() => {
     if (!el) return;
     // Catégories dynamiques : union des existantes + prédéfinies
     const usedCats = [...new Set(db.epicerie.map(p => p.categorie).filter(Boolean))];
-    const allCats  = ['Toutes', ...new Set([...EPI_CATS.slice(1), ...usedCats])];
+    const configCats = db.epi_categories && db.epi_categories.length ? db.epi_categories : EPI_CATS.slice(1);
+    const allCats  = ['Toutes', ...new Set([...configCats, ...usedCats])];
     el.innerHTML = allCats.map(c => {
       const active = c === _filCat ? ' on' : '';
       return `<button class="chip${active}" onclick="Epicerie.setFilter('${c}')">${c}</button>`;
@@ -140,9 +143,139 @@ const Epicerie = (() => {
     lucide.createIcons({ nodes: listEl.querySelectorAll('[data-lucide]') });
   }
 
+  // ── Remplissage dynamique des selects ────────────────────
+  function _fillEpiCatSelect() {
+    const sel = document.getElementById('m-epi-cat');
+    if (!sel) return;
+    const cats = db.epi_categories && db.epi_categories.length ? db.epi_categories : ['Huiles', 'Sucré', 'Salé', 'Boissons', 'Consommables'];
+    sel.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  }
+
+  function _fillEpiConsSelect() {
+    const sel = document.getElementById('m-epi-conserv');
+    if (!sel) return;
+    const cons = db.epi_conservations && db.epi_conservations.length ? db.epi_conservations : ['Sec', 'Frais', 'Surgelé', 'Ambiant'];
+    sel.innerHTML = cons.map(c => `<option value="${c}">${c}</option>`).join('');
+  }
+
+  // ── Gestion des catégories ──────────────────────────────
+  function _renderCatList() {
+    const el = document.getElementById('epi-cat-list');
+    if (!el) return;
+    const cats = db.epi_categories || [];
+    el.innerHTML = cats.map(c => `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:.85rem">${c}</span>
+      <div class="btn-row">
+        <button class="btn btn-ghost btn-sm" onclick="Epicerie.renameCat('${c.replace(/'/g, "\\'")}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="Epicerie.delCat('${c.replace(/'/g, "\\'")}')">🗑️</button>
+      </div>
+    </div>`).join('');
+  }
+
+  async function _saveCats() {
+    await sb.from('config').upsert({ key: 'epicerie_categories', value: JSON.stringify(db.epi_categories) }, { onConflict: 'key' });
+  }
+
+  async function addCat() {
+    const input = document.getElementById('epi-new-cat');
+    const name = input?.value?.trim();
+    if (!name) return;
+    if ((db.epi_categories || []).includes(name)) { App.toast('Cette catégorie existe déjà', 'warn'); return; }
+    if (!db.epi_categories) db.epi_categories = [];
+    db.epi_categories.push(name);
+    input.value = '';
+    try { await _saveCats(); render(); App.toast('Catégorie ajoutée ✅', 'ok'); }
+    catch (e) { console.error(e); App.toast('Erreur', 'err'); }
+  }
+
+  async function renameCat(old) {
+    const newName = prompt('Nouveau nom pour "' + old + '" :', old);
+    if (!newName || newName.trim() === old) return;
+    const trimmed = newName.trim();
+    const idx = (db.epi_categories || []).indexOf(old);
+    if (idx < 0) return;
+    db.epi_categories[idx] = trimmed;
+    // Mettre à jour les produits associés
+    for (const p of db.epicerie.filter(x => x.categorie === old)) {
+      p.categorie = trimmed;
+      try { await sbUpsertEpicerie({ ...p }); } catch (e) { console.error(e); }
+    }
+    try { await _saveCats(); render(); App.toast('Catégorie renommée ✅', 'ok'); }
+    catch (e) { console.error(e); App.toast('Erreur', 'err'); }
+  }
+
+  async function delCat(name) {
+    if (!confirm(`Supprimer la catégorie "${name}" ?\nLes produits associés passeront en "Autre".`)) return;
+    db.epi_categories = (db.epi_categories || []).filter(c => c !== name);
+    for (const p of db.epicerie.filter(x => x.categorie === name)) {
+      p.categorie = 'Autre';
+      try { await sbUpsertEpicerie({ ...p }); } catch (e) { console.error(e); }
+    }
+    try { await _saveCats(); render(); App.toast('Catégorie supprimée', 'ok'); }
+    catch (e) { console.error(e); App.toast('Erreur', 'err'); }
+  }
+
+  // ── Gestion des conservations ───────────────────────────
+  function _renderConsList() {
+    const el = document.getElementById('epi-cons-list');
+    if (!el) return;
+    const cons = db.epi_conservations || [];
+    el.innerHTML = cons.map(c => `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:.85rem">${c}</span>
+      <div class="btn-row">
+        <button class="btn btn-ghost btn-sm" onclick="Epicerie.renameCons('${c.replace(/'/g, "\\'")}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="Epicerie.delCons('${c.replace(/'/g, "\\'")}')">🗑️</button>
+      </div>
+    </div>`).join('');
+  }
+
+  async function _saveCons() {
+    await sb.from('config').upsert({ key: 'epicerie_conservations', value: JSON.stringify(db.epi_conservations) }, { onConflict: 'key' });
+  }
+
+  async function addCons() {
+    const input = document.getElementById('epi-new-cons');
+    const name = input?.value?.trim();
+    if (!name) return;
+    if ((db.epi_conservations || []).includes(name)) { App.toast('Cette conservation existe déjà', 'warn'); return; }
+    if (!db.epi_conservations) db.epi_conservations = [];
+    db.epi_conservations.push(name);
+    input.value = '';
+    try { await _saveCons(); render(); App.toast('Conservation ajoutée ✅', 'ok'); }
+    catch (e) { console.error(e); App.toast('Erreur', 'err'); }
+  }
+
+  async function renameCons(old) {
+    const newName = prompt('Nouveau nom pour "' + old + '" :', old);
+    if (!newName || newName.trim() === old) return;
+    const trimmed = newName.trim();
+    const idx = (db.epi_conservations || []).indexOf(old);
+    if (idx < 0) return;
+    db.epi_conservations[idx] = trimmed;
+    for (const p of db.epicerie.filter(x => x.conservation === old)) {
+      p.conservation = trimmed;
+      try { await sbUpsertEpicerie({ ...p }); } catch (e) { console.error(e); }
+    }
+    try { await _saveCons(); render(); App.toast('Conservation renommée ✅', 'ok'); }
+    catch (e) { console.error(e); App.toast('Erreur', 'err'); }
+  }
+
+  async function delCons(name) {
+    if (!confirm(`Supprimer la conservation "${name}" ?\nLes produits associés passeront en "Autre".`)) return;
+    db.epi_conservations = (db.epi_conservations || []).filter(c => c !== name);
+    for (const p of db.epicerie.filter(x => x.conservation === name)) {
+      p.conservation = 'Autre';
+      try { await sbUpsertEpicerie({ ...p }); } catch (e) { console.error(e); }
+    }
+    try { await _saveCons(); render(); App.toast('Conservation supprimée', 'ok'); }
+    catch (e) { console.error(e); App.toast('Erreur', 'err'); }
+  }
+
   // ── Modale création / édition ─────────────────────────────
   function openModal(id = null) {
     _editId = id;
+    _fillEpiCatSelect();
+    _fillEpiConsSelect();
     const titleEl = document.getElementById('m-epi-title');
     const idEl    = document.getElementById('m-epi-id');
     const nomEl   = document.getElementById('m-epi-nom');
@@ -300,6 +433,6 @@ const Epicerie = (() => {
     }
   }
 
-  return { render, openModal, save, del, toggle, setFilter, filter, syncPrix, syncTVA, seedDefaults };
+  return { render, openModal, save, del, toggle, setFilter, filter, syncPrix, syncTVA, seedDefaults, addCat, renameCat, delCat, addCons, renameCons, delCons };
 })();
 window.Epicerie = Epicerie;

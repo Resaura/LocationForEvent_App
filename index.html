@@ -240,6 +240,7 @@
               </div>
               <button class="btn btn-ghost btn-sm" onclick="Catalogue.exportCsv()"><i data-lucide="download"></i> CSV</button>
             </div>
+            <input type="text" id="cat-cat-filter" placeholder="Filtrer les catégories…" oninput="Catalogue.filterCats()" style="width:100%;margin-bottom:8px;padding:6px 12px;font-size:.82rem;border:1px solid var(--border);border-radius:var(--r-sm)">
             <div class="chips" id="cat-chips"></div>
             <div class="tbl-wrap">
               <table class="dt">
@@ -586,6 +587,30 @@
               <div class="ei"><i data-lucide="shopping-cart"></i></div>
               <h3>Aucun produit</h3>
               <p>Ajoutez vos premiers produits épicerie</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gestion catégories & conservations épicerie -->
+        <div class="g2 mt-3">
+          <div class="card">
+            <div class="card-hd"><div class="card-title"><i data-lucide="tag"></i> Catégories épicerie</div></div>
+            <div class="card-bd">
+              <div class="flex gap-2 mb-3">
+                <input type="text" id="epi-new-cat" placeholder="Nouvelle catégorie…" style="flex:1" onkeydown="if(event.key==='Enter')Epicerie.addCat()">
+                <button class="btn btn-primary btn-sm" onclick="Epicerie.addCat()">+ Ajouter</button>
+              </div>
+              <div id="epi-cat-list"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><div class="card-title"><i data-lucide="thermometer"></i> Conservations épicerie</div></div>
+            <div class="card-bd">
+              <div class="flex gap-2 mb-3">
+                <input type="text" id="epi-new-cons" placeholder="Nouvelle conservation…" style="flex:1" onkeydown="if(event.key==='Enter')Epicerie.addCons()">
+                <button class="btn btn-primary btn-sm" onclick="Epicerie.addCons()">+ Ajouter</button>
+              </div>
+              <div id="epi-cons-list"></div>
             </div>
           </div>
         </div>
@@ -1214,20 +1239,13 @@
         <div class="fg">
           <label class="fl">Catégorie</label>
           <select id="m-epi-cat">
-            <option value="Huiles">Huiles</option>
-            <option value="Sucré">Sucré</option>
-            <option value="Salé">Salé</option>
-            <option value="Boissons">Boissons</option>
-            <option value="Consommables">Consommables</option>
+            <!-- Rempli dynamiquement par Epicerie.openModal() -->
           </select>
         </div>
         <div class="fg">
           <label class="fl">Conservation</label>
           <select id="m-epi-conserv">
-            <option value="Sec">Sec</option>
-            <option value="Frais">Frais</option>
-            <option value="Surgelé">Surgelé</option>
-            <option value="Ambiant">Ambiant</option>
+            <!-- Rempli dynamiquement par Epicerie.openModal() -->
           </select>
         </div>
       </div>

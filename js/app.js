@@ -21,6 +21,8 @@ let db = {
   options_protection:   [],   // options protection
   contrat_template:     null, // modèle contrat personnalisé
   contrat_mentions:     '',   // mentions légales contrat
+  epi_categories:       [],   // catégories épicerie (dynamiques)
+  epi_conservations:    [],   // conservations épicerie (dynamiques)
 };
 
 // ─── CONSTANTES ──────────────────────────────────────────────
@@ -518,7 +520,7 @@ const App = {
     });
 
     try {
-      const [data, svcRes, epiRes, teRes, payRes, remRes, protRes, cfgTplRes, cfgMenRes] = await Promise.all([
+      const [data, svcRes, epiRes, teRes, payRes, remRes, protRes, cfgTplRes, cfgMenRes, epiCatRes, epiConsRes] = await Promise.all([
         sbLoad(),
         sb.from('services').select('*').order('id'),
         sb.from('epicerie').select('*').order('id'),
@@ -528,6 +530,8 @@ const App = {
         sb.from('options_protection').select('*').order('id'),
         sb.from('config').select('*').eq('key', 'contrat_template').maybeSingle(),
         sb.from('config').select('*').eq('key', 'contrat_mentions').maybeSingle(),
+        sb.from('config').select('*').eq('key', 'epicerie_categories').maybeSingle(),
+        sb.from('config').select('*').eq('key', 'epicerie_conservations').maybeSingle(),
       ]);
       const hasData = data.cat.length || data.devis.length || data.amort.length;
 
@@ -584,6 +588,20 @@ const App = {
       }
       if (cfgMenRes.data?.value) {
         try { db.contrat_mentions = JSON.parse(cfgMenRes.data.value); } catch (e) { db.contrat_mentions = ''; }
+      }
+
+      // Charger catégories / conservations épicerie
+      const defaultEpiCats = ['Huiles', 'Sucré', 'Salé', 'Boissons', 'Consommables'];
+      const defaultEpiCons = ['Sec', 'Frais', 'Surgelé', 'Ambiant'];
+      if (epiCatRes.data?.value) {
+        try { db.epi_categories = JSON.parse(epiCatRes.data.value); } catch (e) { db.epi_categories = [...defaultEpiCats]; }
+      } else {
+        db.epi_categories = [...defaultEpiCats];
+      }
+      if (epiConsRes.data?.value) {
+        try { db.epi_conservations = JSON.parse(epiConsRes.data.value); } catch (e) { db.epi_conservations = [...defaultEpiCons]; }
+      } else {
+        db.epi_conservations = [...defaultEpiCons];
       }
 
       App.setConnStatus(true);

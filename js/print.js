@@ -63,6 +63,8 @@ const Print = (() => {
     const lines    = allLines.filter(l => !l.optional);
     const optLines = allLines.filter(l => l.optional);
     const sousTotal = lines.reduce((s, l) => s + l.prixNet, 0);
+    const sousTotalBrut = lines.reduce((s, l) => s + l.prix, 0);
+    const hasLineRemises = lines.some(l => l.remises && l.remises.length > 0);
     const dvRemises = dv.remises || [];
     const totalRemises = dvRemises.reduce((s, r) => s + (r.montant_deduit || 0), 0);
     const tot = Math.max(0, sousTotal - totalRemises);
@@ -165,25 +167,27 @@ ${(dv.client || dv.recup) ? `<div class="client-box">
       const imgTag = l._image ? `<img src="${l._image}" style="width:50px;height:35px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:6px">` : '';
       const descTag = (l._protDesc || l._desc) ? `<br><span style="font-size:9px;color:#6B7280">${l._protDesc || l._desc}</span>` : '';
       const hasRem = l.remises && l.remises.length > 0;
-      let remRows = '';
+      let remDiv = '';
       if (hasRem) {
-        remRows = l.remises.map(r => {
-          const lab = r.type === 'pourcentage' ? `(-${r.valeur}%)` : `(-${r.valeur.toFixed(2)} €)`;
-          return `<tr><td colspan="4" style="padding:1px 11px 1px 22px;font-size:10px;color:#DC2626;border-bottom:none">${r.nom} ${lab}</td><td style="padding:1px 11px;text-align:right;font-size:10px;color:#DC2626;border-bottom:none">- ${r.montant_deduit.toFixed(2)} €</td></tr>`;
-        }).join('') +
-        `<tr><td colspan="4" style="padding:1px 11px 1px 22px;font-size:10px;font-weight:600;color:#0F2744;border-bottom:1px solid #F3F4F6">Net HT</td><td style="padding:1px 11px;text-align:right;font-size:10px;font-weight:600;color:#0F2744;border-bottom:1px solid #F3F4F6">${l.prixNet.toFixed(2)} €</td></tr>`;
+        remDiv = '<div style="font-size:11px;color:#D97706;margin-top:2px">' +
+          l.remises.map(r => {
+            const lab = r.type === 'pourcentage' ? `(-${r.valeur}%)` : `(-${r.valeur.toFixed(2)} €)`;
+            return `${r.nom} ${lab} : -${r.montant_deduit.toFixed(2)} €`;
+          }).join('<br>') +
+          `<br><span style="font-weight:600;color:#0F2744">Net HT : ${l.prixNet.toFixed(2)} €</span></div>`;
       }
       return `<tr>
-      <td style="${hasRem ? 'border-bottom:none' : ''}">${imgTag}${l.name}${pBadge}${descTag}</td>
-      <td style="${hasRem ? 'border-bottom:none' : ''}">${DL[l.dur] || l.dur}</td>
-      <td style="text-align:center;${hasRem ? 'border-bottom:none' : ''}">${l.qty || 1}</td>
-      <td style="text-align:right;${hasRem ? 'border-bottom:none' : ''}">${(l.pu || l.prix).toFixed(2)} €</td>
-      <td style="text-align:right;font-weight:600;${hasRem ? 'border-bottom:none' : ''}">${l.prix.toFixed(2)} €</td>
-    </tr>${remRows}`}).join('')}
+      <td>${imgTag}${l.name}${pBadge}${descTag}${remDiv}</td>
+      <td>${DL[l.dur] || l.dur}</td>
+      <td style="text-align:center">${l.qty || 1}</td>
+      <td style="text-align:right">${(l.pu || l.prix).toFixed(2)} €</td>
+      <td style="text-align:right;font-weight:600">${l.prixNet.toFixed(2)} €</td>
+    </tr>`}).join('')}
   </tbody>
 </table>
 
 <div class="tot">
+  ${hasLineRemises ? `<div>Sous-total avant remises : ${sousTotalBrut.toFixed(2)} €</div>` : ''}
   ${dvRemises.length ? `
     <div style="margin-top:6px">Sous-total : ${sousTotal.toFixed(2)} €</div>
     ${dvRemises.map(r => {
@@ -329,6 +333,8 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
     const pdfLines   = allPdfLines.filter(l => !l.optional);
     const pdfOptLines = allPdfLines.filter(l => l.optional);
     const sousTotal = pdfLines.reduce((s, l) => s + l.prixNet, 0);
+    const sousTotalBrut = pdfLines.reduce((s, l) => s + l.prix, 0);
+    const hasLineRemises = pdfLines.some(l => l.remises && l.remises.length > 0);
     const dvRemises = dv.remises || [];
     const totalRemises = dvRemises.reduce((s, r) => s + (r.montant_deduit || 0), 0);
     const tot = Math.max(0, sousTotal - totalRemises);
@@ -479,7 +485,7 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
       doc.text(String(l.qty || 1), colX[2] + 2, y + 5);
       doc.text((l.pu || l.prix).toFixed(2) + ' €', colX[3] + 2, y + 5);
       doc.setFont(undefined, 'bold');
-      doc.text(l.prix.toFixed(2) + ' €', W - M - 3, y + 5, { align: 'right' });
+      doc.text(l.prixNet.toFixed(2) + ' €', W - M - 3, y + 5, { align: 'right' });
       doc.setFont(undefined, 'normal');
       y += 7;
       if (descLines.length) {
@@ -489,21 +495,19 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
         y += descH;
         doc.setFontSize(9);
       }
-      // Remises par ligne
+      // Remises par ligne (orange sous le nom)
       if (l.remises?.length) {
-        doc.setFontSize(7.5);
+        doc.setFontSize(8);
         l.remises.forEach(r => {
           if (y > 275) { doc.addPage(); y = M; }
           const lab = r.type === 'pourcentage' ? `(-${r.valeur}%)` : `(-${r.valeur.toFixed(2)} €)`;
-          doc.setTextColor(220, 38, 38);
-          doc.text(`${r.nom} ${lab}`, M + 8, y + 3);
-          doc.text(`- ${r.montant_deduit.toFixed(2)} €`, W - M - 3, y + 3, { align: 'right' });
+          doc.setTextColor(217, 119, 6);
+          doc.text(`${r.nom} ${lab} : -${r.montant_deduit.toFixed(2)} €`, M + 8, y + 3);
           y += 4;
         });
         doc.setTextColor(15, 39, 68);
         doc.setFont(undefined, 'bold');
-        doc.text('Net HT :', M + 8, y + 3);
-        doc.text(l.prixNet.toFixed(2) + ' €', W - M - 3, y + 3, { align: 'right' });
+        doc.text('Net HT : ' + l.prixNet.toFixed(2) + ' €', M + 8, y + 3);
         doc.setFont(undefined, 'normal');
         y += 4;
         doc.setFontSize(9);
@@ -514,6 +518,10 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
     y += 4;
     doc.setFontSize(10);
     doc.setTextColor(107, 114, 128);
+    // Sous-total avant remises lignes
+    if (hasLineRemises) {
+      doc.text(`Sous-total avant remises : ${sousTotalBrut.toFixed(2)} €`, W - M, y, { align: 'right' }); y += 5;
+    }
     // Remises
     if (dvRemises.length) {
       doc.text(`Sous-total : ${sousTotal.toFixed(2)} €`, W - M, y, { align: 'right' }); y += 5;
