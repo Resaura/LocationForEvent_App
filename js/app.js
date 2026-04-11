@@ -83,6 +83,7 @@ const PAGE_TITLES = {
   'epicerie':      'Épicerie & Consommables',
   'paiements':     'Paiements',
   'contrats':      'Contrats & Protection',
+  'emails':        'Emails / Communication',
   'parametres':    'Paramètres',
 };
 
@@ -128,6 +129,7 @@ const App = {
       'epicerie':      () => typeof Epicerie !== 'undefined' && Epicerie.render(),
       'paiements':     () => typeof Paiements !== 'undefined' && Paiements.render(),
       'contrats':      () => typeof Contrats !== 'undefined' && Contrats.render(),
+      'emails':        () => typeof Emails !== 'undefined' && Emails.render(),
       'parametres':    () => { Params.render(); App._updateStorageInfo(); },
     };
     if (map[page]) map[page]();
@@ -603,6 +605,9 @@ const App = {
       } else {
         db.epi_conservations = [...defaultEpiCons];
       }
+
+      // Charger les logs emails (non bloquant)
+      if (typeof Emails !== 'undefined') Emails.loadLog();
 
       App.setConnStatus(true);
     } catch (err) {

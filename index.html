@@ -80,6 +80,9 @@
       <button class="s-item" data-page="paiements">
         <span class="ic"><i data-lucide="credit-card"></i></span>Paiements
       </button>
+      <button class="s-item" data-page="emails">
+        <span class="ic"><i data-lucide="mail"></i></span>Emails
+      </button>
 
       <div class="s-section">Configuration</div>
       <button class="s-item" data-page="amortissement">
@@ -581,6 +584,9 @@
                 <input type="text" id="epi-search" placeholder="Rechercher un produit…" oninput="Epicerie.filter()">
               </div>
             </div>
+            <div style="margin-bottom:6px">
+              <input type="text" id="epi-cat-search" placeholder="Filtrer les catégories…" oninput="Epicerie.filterCats()" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:.82rem">
+            </div>
             <div class="chips" id="epi-chips"></div>
             <div id="epi-list"></div>
             <div class="empty" id="epi-empty" style="display:none">
@@ -911,6 +917,93 @@
                 <div class="text-sm mb-3" id="pwa-status">Vérification…</div>
                 <button class="btn btn-primary btn-sm" id="pwa-install-btn" style="display:none" onclick="Pwa.install()">📲 Installer l'app</button>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════ EMAILS ════════════ -->
+      <div class="page" id="page-emails">
+        <div class="card mb-3">
+          <div class="card-hd">
+            <div class="card-title"><i data-lucide="mail"></i> Emails / Communication</div>
+          </div>
+          <div class="card-bd">
+
+            <!-- Sélecteur de devis -->
+            <div class="fg" style="position:relative;margin-bottom:14px">
+              <label class="fl">Sélectionner un devis</label>
+              <input type="text" id="em-devis-search" placeholder="Rechercher par client, numéro…" oninput="Emails.searchDevis()" autocomplete="off">
+              <div id="em-devis-list" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:10;background:#fff;border:1px solid var(--border);border-radius:0 0 8px 8px;max-height:240px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1)"></div>
+            </div>
+
+            <!-- Onglets contexte -->
+            <div class="fg" style="margin-bottom:14px">
+              <label class="fl">Contexte du mail</label>
+              <div class="chips" id="em-ctx-tabs" style="margin-top:4px"></div>
+            </div>
+
+            <!-- Variables + Preview côte à côte -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px" class="em-grid">
+
+              <!-- Colonne gauche : variables -->
+              <div>
+                <div style="font-size:.78rem;font-weight:600;color:var(--navy);margin-bottom:8px">Variables du mail</div>
+                <div class="r2">
+                  <div class="fg"><label class="fl">Prénom</label><input type="text" id="em-v-prenom" oninput="Emails.updateVar('prenom')"></div>
+                  <div class="fg"><label class="fl">Nom</label><input type="text" id="em-v-nom" oninput="Emails.updateVar('nom')"></div>
+                </div>
+                <div class="fg"><label class="fl">Type d'événement</label><input type="text" id="em-v-event" oninput="Emails.updateVar('event')"></div>
+                <div class="r2">
+                  <div class="fg"><label class="fl">Date événement</label><input type="text" id="em-v-date" oninput="Emails.updateVar('date_event')"></div>
+                  <div class="fg"><label class="fl">Référence devis</label><input type="text" id="em-v-ref" oninput="Emails.updateVar('ref')"></div>
+                </div>
+                <div class="fg"><label class="fl">Matériel principal</label><input type="text" id="em-v-materiel" oninput="Emails.updateVar('materiel')"></div>
+                <div class="fg"><label class="fl">Montant TTC</label><input type="text" id="em-v-montant" oninput="Emails.updateVar('montant')"></div>
+
+                <!-- Boutons d'action -->
+                <div class="sep"></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <button class="btn btn-primary btn-sm" onclick="Emails.copyMail()"><i data-lucide="copy"></i> Copier le mail</button>
+                  <button class="btn btn-purple btn-sm" onclick="Emails.openMailto()"><i data-lucide="send"></i> Ouvrir dans la messagerie</button>
+                  <button class="btn btn-gold btn-sm" onclick="Emails.saveLog()"><i data-lucide="save"></i> Enregistrer l'envoi</button>
+                </div>
+              </div>
+
+              <!-- Colonne droite : prévisualisation -->
+              <div>
+                <div style="font-size:.78rem;font-weight:600;color:var(--navy);margin-bottom:8px">Prévisualisation</div>
+                <div style="background:#F9FAFB;border:1px solid var(--border);border-radius:8px;padding:14px;min-height:200px">
+                  <div style="font-size:.82rem;font-weight:600;color:var(--navy);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">
+                    Objet : <span id="em-preview-objet"></span>
+                  </div>
+                  <div id="em-preview-body" style="font-size:.84rem;line-height:1.6;color:#374151"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Historique des envois -->
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title"><i data-lucide="history"></i> Historique des envois</div>
+          </div>
+          <div class="card-bd">
+            <div class="tbl-wrap">
+              <table class="dt">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Client</th>
+                    <th>Contexte</th>
+                    <th>Objet</th>
+                  </tr>
+                </thead>
+                <tbody id="em-log-body">
+                  <tr><td colspan="4" style="text-align:center;color:var(--grey);padding:14px;font-size:.84rem">Aucun envoi enregistré</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -1301,6 +1394,7 @@
 <script src="js/stats.js"></script>
 <script src="js/paiements.js"></script>
 <script src="js/contrats.js"></script>
+<script src="js/emails.js"></script>
 <script src="js/print.js"></script>
 <script src="js/pwa.js"></script>
 <script>

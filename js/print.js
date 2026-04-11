@@ -41,6 +41,11 @@ const Print = (() => {
   function _enrichLines(lines) {
     return lines.map(l => {
       const ll = { ...l };
+      // Préserver explicitement les champs remises depuis la ligne originale
+      if (l.remises) ll.remises = l.remises;
+      if (l.prixNet != null) ll.prixNet = l.prixNet;
+      if (l.prixHT_apres_remises != null) ll.prixHT_apres_remises = l.prixHT_apres_remises;
+      if (l.prixTTC_apres_remises != null) ll.prixTTC_apres_remises = l.prixTTC_apres_remises;
       if (!ll._image && ll.dur !== 'epicerie' && ll.dur !== 'service' && ll.dur !== 'protection') {
         const item = db.cat.find(i => i.name === ll.name);
         if (item) {
@@ -231,7 +236,7 @@ ${optLines.length ? `
           <td>${durL}</td>
           <td style="text-align:center">${l.qty || 1}</td>
           <td style="text-align:right">${(l.pu || l.prix).toFixed(2)} €</td>
-          <td style="text-align:right;font-weight:600">${l.prix.toFixed(2)} €</td>
+          <td style="text-align:right;font-weight:600">${(l.prixNet != null ? l.prixNet : (l.prixTTC || l.prix)).toFixed(2)} €</td>
         </tr>`;
       }).join('')}
     </tbody>
@@ -484,6 +489,7 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
       doc.text(durLabel, colX[1] + 2, y + 5);
       doc.text(String(l.qty || 1), colX[2] + 2, y + 5);
       doc.text((l.pu || l.prix).toFixed(2) + ' €', colX[3] + 2, y + 5);
+      const totalAff = (l.prixNet != null ? l.prixNet : (l.prixTTC || l.prix));
       doc.setFont(undefined, 'bold');
       doc.text(l.prixNet.toFixed(2) + ' €', W - M - 3, y + 5, { align: 'right' });
       doc.setFont(undefined, 'normal');
@@ -603,7 +609,7 @@ ${ds.afficherMentions && p.mentions ? `<div class="foot">${p.mentions}</div>` : 
         doc.text(String(l.qty || 1), colX[2] + 2, y + 5);
         doc.text((l.pu || l.prix).toFixed(2) + ' €', colX[3] + 2, y + 5);
         doc.setFont(undefined, 'bold');
-        doc.text(l.prix.toFixed(2) + ' €', W - M - 3, y + 5, { align: 'right' });
+        doc.text((l.prixNet != null ? l.prixNet : (l.prixTTC || l.prix)).toFixed(2) + ' €', W - M - 3, y + 5, { align: 'right' });
         doc.setFont(undefined, 'normal');
         y += 7;
       });

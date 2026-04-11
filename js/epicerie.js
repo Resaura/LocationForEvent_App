@@ -46,9 +46,10 @@ const CONSERV = {
 
 // ─── MODULE ÉPICERIE ─────────────────────────────────────────
 const Epicerie = (() => {
-  let _editId  = null;
-  let _filCat  = 'Toutes';
-  let _search  = '';
+  let _editId    = null;
+  let _filCat    = 'Toutes';
+  let _search    = '';
+  let _catSearch = '';
 
   // ── Rendu principal ──────────────────────────────────────
   function render() {
@@ -66,7 +67,8 @@ const Epicerie = (() => {
     const usedCats = [...new Set(db.epicerie.map(p => p.categorie).filter(Boolean))];
     const configCats = db.epi_categories && db.epi_categories.length ? db.epi_categories : EPI_CATS.slice(1);
     const allCats  = ['Toutes', ...new Set([...configCats, ...usedCats])];
-    el.innerHTML = allCats.map(c => {
+    const visCats  = _catSearch ? allCats.filter(c => c === 'Toutes' || c.toLowerCase().includes(_catSearch)) : allCats;
+    el.innerHTML = visCats.map(c => {
       const active = c === _filCat ? ' on' : '';
       return `<button class="chip${active}" onclick="Epicerie.setFilter('${c}')">${c}</button>`;
     }).join('');
@@ -88,10 +90,11 @@ const Epicerie = (() => {
   function _filtered() {
     return db.epicerie.filter(p => {
       const matchCat = _filCat === 'Toutes' || p.categorie === _filCat;
+      const matchCatSearch = !_catSearch || (p.categorie || '').toLowerCase().includes(_catSearch);
       const matchSearch = !_search
         || p.nom.toLowerCase().includes(_search)
         || (p.categorie || '').toLowerCase().includes(_search);
-      return matchCat && matchSearch;
+      return matchCat && matchCatSearch && matchSearch;
     });
   }
 
@@ -433,6 +436,13 @@ const Epicerie = (() => {
     }
   }
 
-  return { render, openModal, save, del, toggle, setFilter, filter, syncPrix, syncTVA, seedDefaults, addCat, renameCat, delCat, addCons, renameCons, delCons };
+  function filterCats() {
+    const el = document.getElementById('epi-cat-search');
+    _catSearch = el ? el.value.toLowerCase().trim() : '';
+    _buildChips();
+    _renderList();
+  }
+
+  return { render, openModal, save, del, toggle, setFilter, filter, filterCats, syncPrix, syncTVA, seedDefaults, addCat, renameCat, delCat, addCons, renameCons, delCons };
 })();
 window.Epicerie = Epicerie;
